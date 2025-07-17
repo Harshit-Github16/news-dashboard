@@ -45,7 +45,7 @@ function TextEditor({ setContent, content, readonly }: any) {
   );
 }
 
-function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange }: any) {
+function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange, WP_USERS }: any) {
   if (!open) return null;
   return (
     <div style={{
@@ -77,9 +77,10 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
           <label style={{ fontWeight: 500 }}>Author
             <select name="author" value={data.author} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
-              <option value="Harshit Sharma">Harshit Sharma</option>
-              <option value="Jitesh Kanwariya">Jitesh Kanwariya</option>
-              <option value="Saroj Panigrahi">Saroj Panigrahi</option>
+              <option value="">Select Author</option>
+              {WP_USERS.map((user: any, idx: number) => (
+                <option key={idx} value={user.username}>{user.username} ({user.role})</option>
+              ))}
             </select>
           </label>
           <label style={{ fontWeight: 500 }}>Category
@@ -129,6 +130,16 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   const [categories, setCategories] = useState<any[]>([]);
+
+  const WP_USERS = [
+    { username: 'sourabh', password: '4xMb49FUasHQM2OJyk4nxdYR', role: 'Author' },
+    { username: 'aman', password: 'm0ZulaUFR2MXNlcJtxqScZsQ', role: 'Author' },
+    { username: 'Jitesh Kanwariya', password: 'ppBcUh2xJyfhfJBp5rfX2Q1f', role: 'Author' },
+    { username: 'Mahima Bhatt', password: 'vPPhR2iOG908N69DyGk3dPOb', role: 'Author' },
+    { username: 'pradeep', password: 'bD72QVvfOqSNzFgzk78q25Sy', role: 'Author' },
+    { username: 'Ravindra Dayma', password: 'OcX3aMF80lUXdJAMp0SwQLXP', role: 'Author' },
+    { username: 'snehagandhi', password: 'qCBrBSxu3cJzlyraLy5NgZaW', role: 'Author' },
+  ];
 
   // Login state
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
@@ -205,11 +216,17 @@ export default function HomePage() {
 
   async function handleEditSave() {
     const updated = [...news];
+    // Ensure author is the selected username from WP_USERS
+    const selectedUser = WP_USERS.find((u: any) => u.username === editData.author);
+    const updatedEditData = {
+      ...editData,
+      author: selectedUser ? selectedUser.username : editData.author,
+    };
     // PATCH to backend
     const res = await fetch('/api/news', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editData),
+      body: JSON.stringify(updatedEditData),
     });
     if (res.ok) {
       const updatedItem = await res.json();
@@ -217,7 +234,7 @@ export default function HomePage() {
       setNews(updated);
     } else {
       // fallback: update local state anyway
-      updated[editIdx!] = { ...updated[editIdx!], ...editData };
+      updated[editIdx!] = { ...updated[editIdx!], ...updatedEditData };
       setNews(updated);
     }
     setEditIdx(null);
@@ -240,7 +257,13 @@ export default function HomePage() {
       const found = categories.find((cat) => cat.id == newsItem.category || cat.slug == newsItem.category);
       categoryId = found ? found.id : null;
     }
-    const payload = { ...newsItem, categories: categoryId ? [categoryId] : [] };
+    const selectedUser = WP_USERS.find((u: any) => u.username === newsItem.author);
+    const payload = {
+      ...newsItem,
+      categories: categoryId ? [categoryId] : [],
+      wpUser: selectedUser?.username,
+      wpPass: selectedUser?.password,
+    };
     delete payload.category;
     const res = await fetch('/api/publish', {
       method: 'POST',
@@ -357,7 +380,8 @@ export default function HomePage() {
                   <td>{item.author || 'N/A'}</td>
                   <td className="time">{formatDate(item.time)}</td>
                   <td className="ellipsis description" title={item.description.replace(/<[^>]+>/g, '')}>
-                    <div dangerouslySetInnerHTML={{ __html: item.description }} />
+                    {/* Show only plain text, single line, ellipsis */}
+                    {item.description.replace(/<[^>]+>/g, '')}
                   </td>
                   <td>
                     {categories.find((cat) => cat.id == item.category)?.name || item.category}
@@ -430,6 +454,7 @@ export default function HomePage() {
         onImageUpload={handleImageUpload}
         categories={categories}
         onDescriptionChange={handleDescriptionChange}
+        WP_USERS={WP_USERS}
       />
  </main>
 

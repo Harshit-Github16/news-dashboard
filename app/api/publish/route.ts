@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
 const WP_URL = 'https://trending.niftytrader.in/wp-json/wp/v2/posts';
-const WP_USER = 'abuzain';
-const WP_APP_PASS = 'YyVf hdCk gCD8 7BB7 lMVV UtxF';
 
 // Example category mapping (update as needed)
 const categoryMap: Record<string, number> = {
@@ -11,7 +9,7 @@ const categoryMap: Record<string, number> = {
   // Add more mappings as needed
 };
 
-async function getMediaIdFromUrl(imageUrl: string) {
+async function getMediaIdFromUrl(imageUrl: string, WP_USER: string, WP_APP_PASS: string) {
   if (!imageUrl || !imageUrl.includes('/wp-content/')) return null;
   // Try to find media by URL
   const mediaApi = 'https://trending.niftytrader.in/wp-json/wp/v2/media?per_page=100&search=' + encodeURIComponent(imageUrl.split('/').pop() || '');
@@ -28,17 +26,25 @@ async function getMediaIdFromUrl(imageUrl: string) {
 
 export async function POST(req: NextRequest) {
   const news = await req.json();
+  const WP_USER = news.wpUser;
+  const WP_APP_PASS = news.wpPass;
   const auth = Buffer.from(`${WP_USER}:${WP_APP_PASS}`).toString('base64');
-  const categoryId = categoryMap[news.category] || 615;
+  // Use category id from frontend
+  let categoryId = null;
+  if (Array.isArray(news.categories) && news.categories.length > 0) {
+    categoryId = news.categories[0];
+  } else if (news.category) {
+    categoryId = news.category;
+  }
   let featured_media = null;
   if (news.image && news.image.includes('/wp-content/')) {
-    featured_media = await getMediaIdFromUrl(news.image);
+    featured_media = await getMediaIdFromUrl(news.image, WP_USER, WP_APP_PASS);
   }
   const postData: any = {
     title: news.headline,
     content: `<img src='${news.image}' style='max-width:100%;height:auto' /><br/>${news.description}`,
     status: 'publish',
-    categories: [categoryId],
+    categories: categoryId ? [categoryId] : [],
     excerpt: news.description?.slice(0, 200),
   };
   if (featured_media) postData.featured_media = featured_media;
