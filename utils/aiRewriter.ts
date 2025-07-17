@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const genAI = new GoogleGenAI({ apiKey: 'AIzaSyBY3JWyJ8rEyZDHvsvSBNQdKVUiYVeM2go' });
+const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 export async function rewriteNews(news: any) {
   const prompt = `
