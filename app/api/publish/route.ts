@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     categories: categoryId ? [categoryId] : [],
     excerpt: news.description?.slice(0, 200),
   };
+  if (news.slug) postData.slug = news.slug;
   if (featured_media) postData.featured_media = featured_media;
   try {
     const wpRes = await axios.post(WP_URL, postData, {

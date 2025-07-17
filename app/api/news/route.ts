@@ -9,12 +9,21 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { username, password } = await req.json();
-  if (username === 'niftytrader-admin' && password === 'nifty4862') {
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } else {
-    return new Response(JSON.stringify({ success: false, error: 'Invalid credentials' }), { status: 401 });
-  }
+  await dbConnect();
+  const data = await req.json();
+  // Generate URL from headline
+  let url = data.headline
+    .slice(0, 20)
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '');
+  // If shortUrl is provided, use it, else use generated url
+  const news = await News.create({
+    ...data,
+    url: data.shortUrl && data.shortUrl.trim() ? data.shortUrl : url,
+    time: new Date().toISOString(),
+  });
+  return NextResponse.json(news, { status: 201 });
 }
 
 export async function PATCH(request: Request) {

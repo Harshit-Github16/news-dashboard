@@ -45,7 +45,7 @@ function TextEditor({ setContent, content, readonly }: any) {
   );
 }
 
-function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange, WP_USERS }: any) {
+function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange, WP_USERS, errors = {}, isAdd = false }: any) {
   if (!open) return null;
   return (
     <div style={{
@@ -66,10 +66,11 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
         overflowY: 'auto',
       }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', fontSize: 28, color: '#888', cursor: 'pointer', fontWeight: 300 }}>&times;</button>
-        <h1 style={{ marginBottom: 28, fontWeight: 700, fontSize: 28, letterSpacing: -1 }}>Edit News</h1>
+        <h1 style={{ marginBottom: 28, fontWeight: 700, fontSize: 28, letterSpacing: -1 }}>{isAdd ? 'Add News' : 'Edit News'}</h1>
         <div style={{ borderBottom: '1px solid #eee', marginBottom: 28 }} />
         <label style={{ fontWeight: 500, marginBottom: 18, display: 'block' }}>Headline
           <input name="headline" value={data.headline} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, marginTop: 6 }} />
+          {isAdd && errors.headline && <div style={{ color: 'red', fontSize: 13 }}>{errors.headline}</div>}
         </label>
         <label style={{ fontWeight: 500, marginBottom: 18, display: 'block' }}>Short URL
           <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, marginTop: 6 }} />
@@ -82,17 +83,20 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
                 <option key={idx} value={user.username}>{user.username} ({user.role})</option>
               ))}
             </select>
+            {isAdd && errors.author && <div style={{ color: 'red', fontSize: 13 }}>{errors.author}</div>}
           </label>
           <label style={{ fontWeight: 500 }}>Category
             <select name="category" value={data.category} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
+              <option value="">Select Category</option>
               {categories.map((cat: any) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
+            {isAdd && errors.category && <div style={{ color: 'red', fontSize: 13 }}>{errors.category}</div>}
           </label>
           <label style={{ fontWeight: 500 }}>Image Upload
             <input type="file" accept="image/*" onChange={onImageUpload} />
-            {data.image && (
+            {data.image && typeof data.image === 'string' && data.image.startsWith('blob:') && (
               <div style={{ marginTop: 12 }}>
                 <img src={data.image} alt="Uploaded" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, border: '1px solid #eee' }} />
               </div>
@@ -102,10 +106,11 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
         <div style={{ fontWeight: 500, marginBottom: 8 }}>Description</div>
         <div style={{ border: '1px solid #ccc', borderRadius: 8, minHeight: 350, marginBottom: 16, padding: 8, background: '#fafbfc' }}>
           <TextEditor setContent={onDescriptionChange} content={data.description} readonly={false} />
+          {isAdd && errors.description && <div style={{ color: 'red', fontSize: 13 }}>{errors.description}</div>}
         </div>
         <div style={{ borderTop: '1px solid #eee', marginTop: 36, marginBottom: 16 }} />
         <div style={{ marginTop: 0, display: 'flex', gap: 18, justifyContent: 'flex-end' }}>
-          <button onClick={onSave} style={{ padding: '10px 36px', fontWeight: 700, fontSize: 16, background: '#222', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', letterSpacing: 1 }}>Save</button>
+          <button onClick={onSave} style={{ padding: '10px 36px', fontWeight: 700, fontSize: 16, background: '#222', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', letterSpacing: 1 }}>{isAdd ? 'Add' : 'Save'}</button>
           <button onClick={onClose} style={{ padding: '10px 36px', fontWeight: 500, fontSize: 16, background: '#eee', color: '#222', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancel</button>
         </div>
       </div>
@@ -130,6 +135,9 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   const [categories, setCategories] = useState<any[]>([]);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addData, setAddData] = useState<any>({ headline: '', description: '', author: '', category: '', image: '', shortUrl: '' });
+  const [addErrors, setAddErrors] = useState<any>({});
 
   const WP_USERS = [
     { username: 'sourabh', password: '4xMb49FUasHQM2OJyk4nxdYR', role: 'Author' },
@@ -204,8 +212,21 @@ export default function HomePage() {
     setModalOpen(true);
   }
 
+  function generateSlug(headline: string) {
+    return headline
+      .slice(0, 25)
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-]/g, '');
+  }
+
   function handleEditChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    setEditData({ ...editData, [e.target.name]: e.target.value });
+    let value = e.target.value;
+    let updated = { ...editData, [e.target.name]: value };
+    if (e.target.name === 'headline') {
+      updated.shortUrl = generateSlug(value);
+    }
+    setEditData(updated);
   }
 
   function handleEditCancel() {
@@ -222,6 +243,7 @@ export default function HomePage() {
       ...editData,
       author: selectedUser ? selectedUser.username : editData.author,
     };
+    if (!updatedEditData.image) delete updatedEditData.image;
     // PATCH to backend
     const res = await fetch('/api/news', {
       method: 'PATCH',
@@ -263,6 +285,7 @@ export default function HomePage() {
       categories: categoryId ? [categoryId] : [],
       wpUser: selectedUser?.username,
       wpPass: selectedUser?.password,
+      slug: newsItem.shortUrl,
     };
     delete payload.category;
     const res = await fetch('/api/publish', {
@@ -319,26 +342,81 @@ export default function HomePage() {
     }
   }
 
+  function handleAddChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    let value = e.target.value;
+    let updated = { ...addData, [e.target.name]: value };
+    if (e.target.name === 'headline') {
+      updated.shortUrl = generateSlug(value);
+    }
+    setAddData(updated);
+  }
+  function handleAddDescriptionChange(value: string) {
+    setAddData((prev: any) => ({ ...prev, description: value }));
+  }
+  async function handleAddImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setAddData((prev: any) => ({ ...prev, image: localUrl }));
+  }
+  function validateAddForm() {
+    const errors: any = {};
+    if (!addData.headline || addData.headline.trim().length < 5) errors.headline = 'Headline is required (min 5 chars)';
+    if (!addData.description || addData.description.trim().length < 10) errors.description = 'Description is required (min 10 chars)';
+    if (!addData.author) errors.author = 'Author is required';
+    if (!addData.category) errors.category = 'Category is required';
+    return errors;
+  }
+  async function handleAddSave() {
+    const errors = validateAddForm();
+    setAddErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    const payload = { ...addData };
+    if (!payload.image) delete payload.image;
+    const res = await fetch('/api/news', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      setAddModalOpen(false);
+      setAddData({ headline: '', description: '', author: '', category: '', image: '', shortUrl: '' });
+      setAddErrors({});
+      // Refresh news
+      const n = await getNews();
+      setNews(n.reverse());
+    }
+  }
+
   return (
  
 
 <main className="container">
       <div className="header">
         <h2 className="">News Dashboard</h2>
-        <button
-          onClick={handleScrape}
-          disabled={scraping}
-          className={`btn ${scraping ? 'btn-disabled' : ''}`}
-        >
-          {scraping ? 'Scraping...' : 'Fetch Latest News'}
-        </button>
-        <button
-          onClick={handleLogout}
-          className="btn btn-danger"
-          style={{ marginLeft: 16 }}
-        >
-          Logout
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="btn btn-secondary"
+            style={{ fontWeight: 700 }}
+          >
+            + Add New News
+          </button>
+          <button
+            onClick={handleScrape}
+            disabled={scraping}
+            className={`btn ${scraping ? 'btn-disabled' : ''}`}
+          >
+            {scraping ? 'Scraping...' : 'Fetch Latest News'}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="btn btn-danger"
+            style={{ marginLeft: 16 }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="table-wrapper">
@@ -456,6 +534,21 @@ export default function HomePage() {
         onDescriptionChange={handleDescriptionChange}
         WP_USERS={WP_USERS}
       />
+      {addModalOpen && (
+        <EditModal
+          open={addModalOpen}
+          data={addData}
+          onChange={handleAddChange}
+          onClose={() => { setAddModalOpen(false); setAddErrors({}); }}
+          onSave={handleAddSave}
+          onImageUpload={handleAddImageUpload}
+          categories={categories}
+          onDescriptionChange={handleAddDescriptionChange}
+          WP_USERS={WP_USERS}
+          errors={addErrors}
+          isAdd={true}
+        />
+      )}
  </main>
 
   );
