@@ -71,6 +71,9 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
         <label style={{ fontWeight: 500, marginBottom: 18, display: 'block' }}>Headline
           <input name="headline" value={data.headline} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, marginTop: 6 }} />
         </label>
+        <label style={{ fontWeight: 500, marginBottom: 18, display: 'block' }}>Short URL
+          <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, marginTop: 6 }} />
+        </label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
           <label style={{ fontWeight: 500 }}>Author
             <select name="author" value={data.author} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
