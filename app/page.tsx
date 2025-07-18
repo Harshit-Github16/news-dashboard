@@ -6,6 +6,7 @@ const JoditEditor = dynamic(() => import('jodit-pro-react'), { ssr: false });
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSignOutAlt, faEdit, faTrash, faUpload, faCheck, faTimes, faLink, faClock } from '@fortawesome/free-solid-svg-icons';
+import Image from 'next/image';
 // import 'react-quill/dist/quill.snow.css';
 
 async function getNews() {
@@ -79,24 +80,22 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-60 flex items-center justify-center z-50">
-      <div className="relative bg-white p-8 rounded-2xl shadow-2xl max-w-[80%] w-full max-h-[80vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 bg-transparent border-none text-gray-500 text-2xl font-light cursor-pointer">
-          &times;
-        </button>
-        <h1 className="text-2xl font-bold mb-4 text-indigo-700">{isAdd ? 'Add News' : 'Edit News'}</h1>
+      <div className="relative bg-white p-8 rounded shadow-lg max-w-[80%] w-full max-h-[80vh] overflow-y-auto border border-gray-300">
+        <button onClick={onClose} className="absolute top-4 right-4 bg-transparent border-none text-gray-500 text-2xl font-light cursor-pointer">&times;</button>
+        <h1 className="text-2xl font-bold mb-4 text-blue-700">{isAdd ? 'Add News' : 'Edit News'}</h1>
         <div className="border-b border-gray-200 mb-4" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left side: all fields except description */}
           <div className="flex flex-col gap-4">
-            <label className="block font-semibold text-lg">Headline
-              <input name="headline" value={data.headline} onChange={onChange} className="w-full p-3 border border-gray-300 rounded-md text-lg mt-1 font-semibold" />
+            <label className="block font-semibold text-base">Headline
+              <input name="headline" value={data.headline} onChange={onChange} className="w-full p-2 border border-gray-300 text-base mt-1 font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
               {isAdd && errors.headline && <div className="text-red-500 text-sm mt-1">{errors.headline}</div>}
             </label>
-            <label className="block font-medium">Short URL
-              <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" className="w-full p-2 border border-gray-300 rounded-md text-base mt-1" />
+            <label className="block font-medium text-sm">Short URL
+              <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" className="w-full p-2 border border-gray-300 text-base mt-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
             </label>
             <label className="block text-sm font-medium">Author
-              <select name="author" value={data.author} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-md text-sm mt-1">
+              <select name="author" value={data.author} onChange={onChange} className="w-full p-2 border border-gray-300 text-sm mt-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none">
                 <option value="">Select Author</option>
                 {WP_USERS.map((user: any, idx: number) => (
                   <option key={idx} value={user.username}>{user.username} ({user.role})</option>
@@ -105,7 +104,7 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
               {isAdd && errors.author && <div className="text-red-500 text-xs mt-1">{errors.author}</div>}
             </label>
             <label className="block text-sm font-medium">Category
-              <select name="category" value={data.category} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-md text-sm mt-1">
+              <select name="category" value={data.category} onChange={onChange} className="w-full p-2 border border-gray-300 text-sm mt-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none">
                 <option value="">Select Category</option>
                 {categories.map((cat: any) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -114,38 +113,38 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
               {isAdd && errors.category && <div className="text-red-500 text-xs mt-1">{errors.category}</div>}
             </label>
             <label className="block text-sm font-medium">Image Upload
-              <input type="file" accept="image/*" onChange={onImageUpload} className="w-full p-2 border border-gray-300 rounded-md text-sm mt-1" />
+              <input type="file" accept="image/*" onChange={onImageUpload} className="w-full p-2 border border-gray-300 text-sm mt-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" disabled={!data.author} />
               {data.image && typeof data.image === 'string' && data.image.startsWith('blob:') && (
                 <div className="mt-2">
-                  <img src={data.image} alt="Uploaded" className="max-w-32 max-h-24 rounded-md border border-gray-200" />
+                  <img src={data.image} alt="Uploaded" className="max-w-32 max-h-24 border border-gray-200" />
                 </div>
               )}
             </label>
           </div>
           {/* Right side: description only */}
           <div className="flex flex-col h-full">
-            <div className="font-semibold text-lg mb-2">Description</div>
-            <div className=" rounded-lg min-h-[120px]  bg-gray-100 flex-1">
+            <div className="font-semibold text-base mb-2">Description</div>
+            <div className="min-h-[120px] bg-gray-100 flex-1 border border-gray-200">
               <TextEditor setContent={onDescriptionChange} content={data.description} readonly={false} />
               {isAdd && errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
             </div>
           </div>
         </div>
         <div className="border-t border-gray-200 mt-6 mb-4" />
-        <div className="flex justify-end gap-4">
-          <button onClick={onSave} className="px-10 py-2 font-bold text-base bg-indigo-600 text-white rounded-md border-none cursor-pointer hover:bg-indigo-700 transition" disabled={imageUploading}>
+        <div className="flex justify-end gap-3">
+          <button onClick={onSave} className="px-6 py-1 font-bold text-base bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 transition disabled:opacity-60" style={{borderRadius: 0}} disabled={imageUploading}>
             {isAdd ? 'Add' : 'Save'}
           </button>
-          {imageUploading && (
-            <div className="flex items-center gap-2 mt-2 text-indigo-600 font-semibold">
-              <svg className="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-              Uploading image...
-            </div>
-          )}
-          <button onClick={onClose} className="px-10 py-2 font-medium text-base bg-gray-200 text-gray-800 rounded-md border-none cursor-pointer hover:bg-gray-300 transition">
+          <button onClick={onClose} className="px-6 py-1 font-medium text-base bg-gray-100 text-gray-800 border border-gray-400 hover:bg-gray-200 transition" style={{borderRadius: 0}}>
             Cancel
           </button>
         </div>
+        {imageUploading && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 flex flex-col items-center justify-center z-50">
+            <svg className="animate-spin h-8 w-8 text-blue-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+            <div className="text-blue-700 font-semibold text-lg">Uploading image...</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -478,7 +477,7 @@ export default function HomePage() {
     setAddData((prev: any) => ({
       ...prev,
       image: data.id, // store only the id
-      imageAuthor: data.author, // store image author id
+      featured_media: data.id, // store only the id for WordPress compatibility
     }));
   }
   function validateAddForm() {
@@ -522,13 +521,16 @@ export default function HomePage() {
 <main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
   {/* Navbar/Header */}
   <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>
-    <span className="text-3xl font-bold text-blue-700">News Dashboard</span>
+    <div className="flex items-center gap-1">
+    <Image src="/logo_side.svg" alt="NiftyTrader Logo" width={100} height={100} className='h-12 w-12' priority />
+      <span className="text-2xl font-bold ">NiftyTrader</span>
+    </div>
     <button
       onClick={handleLogout}
       className="flex items-center gap-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 font-semibold border border-red-600 transition-all duration-150 text-sm"
       style={{minHeight: '32px'}}
     >
-      <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+      <FontAwesomeIcon icon={faSignOutAlt} className='h-4 w-4'  /> Logout
     </button>
   </div>
 
@@ -541,7 +543,7 @@ export default function HomePage() {
           className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded border border-blue-700 hover:bg-blue-700 font-semibold transition-all duration-150 text-sm"
           style={{minHeight: '32px'}}
         >
-          <FontAwesomeIcon icon={faPlus} /> Add News
+          <FontAwesomeIcon icon={faPlus} className='h-4 w-4' /> Add News
         </button>
         <button
           onClick={handleScrape}
@@ -549,7 +551,7 @@ export default function HomePage() {
           className={`flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded border border-gray-400 font-semibold transition-all duration-150 text-sm ${scraping ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200'}`}
           style={{minHeight: '32px'}}
         >
-          <FontAwesomeIcon icon={faUpload} /> {scraping ? 'Scraping...' : 'Fetch Latest News'}
+          <FontAwesomeIcon icon={faUpload} className='h-4 w-4'  /> {scraping ? 'Scraping...' : 'Fetch Latest News'}
         </button>
       </div>
       <div className="flex-1 flex justify-end">
@@ -612,8 +614,8 @@ export default function HomePage() {
                         <FontAwesomeIcon icon={faCheck} className="text-green-600" /> Published
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-semibold">
-                        <FontAwesomeIcon icon={faClock} className="text-yellow-600" /> Pending
+                      <span className="inline-flex items-center gap-2 px-2 py-1 bg-orange-100 text-orange-700 rounded font-semibold">
+                        <FontAwesomeIcon icon={faClock} className="text-orange-600" /> Pending
                       </span>
                     )}
                   </td>
@@ -623,13 +625,13 @@ export default function HomePage() {
                   </td>
                   <td className="p-3 border-b border-gray-300 align-middle">
                     <button
-                      className={`flex items-center gap-1 px-3 py-1 border text-sm font-semibold transition ${!item.author ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed' : publishedIds.includes(item._id) ? 'bg-green-100 text-green-700 border-green-400 cursor-not-allowed' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600'}`}
+                      className={`flex items-center gap-1 px-3 py-1 border text-sm font-semibold transition ${item.published ? 'bg-green-100 text-green-700 border-green-400 cursor-not-allowed' : !item.author ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600'}`}
                       onClick={() => handlePublish(item)}
-                      disabled={!item.author}
-                      title={!item.author ? 'Please edit this news and select an author' : ''}
+                      disabled={item.published || !item.author}
+                      title={item.published ? 'Already published' : (!item.author ? 'Please edit this news and select an author' : '')}
                     >
                       <FontAwesomeIcon icon={faUpload} />
-                      {publishedIds.includes(item._id) ? 'Published' : 'Publish'}
+                      {item.published ? 'Published' : 'Publish'}
                     </button>
                   </td>
                 </tr>
