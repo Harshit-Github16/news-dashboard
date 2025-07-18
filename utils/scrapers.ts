@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { chromium } from 'playwright';
 import { writeFileSync } from 'fs';
+import Parser from 'rss-parser';
 
 // Helper function to create a news object
 function createNewsItem(headline: string, url: string, source: string, category: string, description = '', image = '') {
@@ -280,7 +281,11 @@ export async function scrapeBloomberg() {
 
 export async function scrapeForexfactory() {
   const url = 'https://www.forexfactory.com/news';
-  const { data } = await axios.get(url);
+  const { data } = await axios.get(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+  });
   const $ = cheerio.load(data);
   const news: any[] = [];
   $('.flexposts__item').each((i, el) => {
@@ -446,7 +451,11 @@ export async function scrapeMoneycontrol() {
 
 export async function scrapeInvesting() {
   const url = 'https://www.investing.com/news/';
-  const { data } = await axios.get(url);
+  const { data } = await axios.get(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+  });
   const $ = cheerio.load(data);
   const news: any[] = [];
   $('.title').each((i, el) => {
@@ -477,4 +486,108 @@ export async function scrapeInvesting() {
 // Fexsheet: URL not provided, stub only
 export async function scrapeFexsheet() {
   return [];
-} 
+}
+
+// export async function scrapeRssFeeds() {
+//   const parser = new Parser();
+//   const rssFeeds = [
+//     'https://www.moneycontrol.com/rss/MCtopnews.xml',
+//     'https://economictimes.indiatimes.com/rssfeedsdefault.cms',
+//     'https://www.financialexpress.com/feed/'
+//   ];
+//   const allFeeds: any[] = [];
+//   for (const url of rssFeeds) {
+//     try {
+//       const feed = await parser.parseURL(url);
+//       const items = feed.items.map(item => {
+//         const headline = item.title || '';
+//         const url = item.link || '';
+//         const description = item.contentSnippet || '';
+//         const source = feed.title || '';
+//         const cat = getFinanceCategory(headline) || getFinanceCategory(description);
+//         if (!cat) return null;
+//         return {
+//           headline,
+//           description,
+//           author: source,
+//           time: item.pubDate || new Date().toISOString(),
+//           image: '',
+//           category: cat,
+//           source,
+//           url,
+//         };
+//       }).filter(Boolean);
+//       allFeeds.push(...items);
+//     } catch (err: any) {
+//       console.error(`Error parsing ${url}`, err.message);
+//     }
+//   }
+//   return allFeeds;
+// } 
+
+export async function scrapeRssFeeds() {
+  const parser = new Parser();
+
+  const rssFeeds = [
+    // Finance / Business
+    'https://www.moneycontrol.com/rss/MCtopnews.xml',
+    'https://economictimes.indiatimes.com/rssfeedsdefault.cms',
+    'https://www.financialexpress.com/feed/',
+    'https://www.livemint.com/rss',
+    'https://www.business-standard.com/rss/home_page_top_stories.rss',
+    'https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best',
+
+    // National / General India News
+    'https://feeds.feedburner.com/ndtvnews-top-stories',
+    'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms',
+    'https://www.hindustantimes.com/rss/topnews/rssfeed.xml',
+    'https://indianexpress.com/feed/',
+    'https://www.thehindu.com/news/national/feeder/default.rss',
+    'https://www.news18.com/rss/india.xml',
+
+    // Global News
+    'https://feeds.bbci.co.uk/news/world/rss.xml',
+    'https://www.reuters.com/tools/rss',
+    'https://edition.cnn.com/services/rss/',
+    'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
+  ];
+
+  const allFeeds: any[] = [];
+  const placeholders = ['finance', 'money', 'stock-market', 'bank', 'sebi','nifty','nse','sensex', 'business', 'news', 'india', 'world'];
+
+  for (const url of rssFeeds) {
+    try {
+      const feed = await parser.parseURL(url);
+
+      const items = feed.items.map(item => {
+        const headline = item.title || '';
+        const url = item.link || '';
+        const description = item.contentSnippet || item.content || item.summary || '';
+        const source = feed.title || '';
+        const time = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString();
+
+        const cat = getFinanceCategory(headline) || getFinanceCategory(description) || 'General';
+
+        const topic = placeholders[Math.floor(Math.random() * placeholders.length)];
+        const image = `https://source.unsplash.com/800x400/?${topic}`;
+
+        return {
+          headline,
+          description,
+          author: source.trim(),
+          time,
+          image,
+          category: cat.charAt(0).toUpperCase() + cat.slice(1),
+          source: source.trim(),
+          url,
+        };
+      }).filter(Boolean);
+
+      allFeeds.push(...items);
+    } catch (err: any) {
+      console.error(`Error parsing ${url}`, err.message);
+    }
+  }
+
+  return allFeeds;
+}

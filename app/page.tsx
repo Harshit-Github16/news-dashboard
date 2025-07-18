@@ -1,9 +1,11 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 const JoditEditor = dynamic(() => import('jodit-pro-react'), { ssr: false });
-import { useRef } from 'react';
+
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faSignOutAlt, faEdit, faTrash, faUpload, faCheck, faTimes, faLink, faClock } from '@fortawesome/free-solid-svg-icons';
 // import 'react-quill/dist/quill.snow.css';
 
 async function getNews() {
@@ -13,7 +15,7 @@ async function getNews() {
 }
 
 function TextEditor({ setContent, content, readonly }: any) {
-  const editor = useRef(null);
+  const editor = React.useRef(null);
   const config = {
     readonly: readonly,
     uploader: {
@@ -45,73 +47,104 @@ function TextEditor({ setContent, content, readonly }: any) {
   );
 }
 
-function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange, WP_USERS, errors = {}, isAdd = false }: any) {
+function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange, WP_USERS, errors = {}, isAdd = false, imageUploading }: any) {
+  const [seoScore, setSeoScore] = React.useState<number | null>(null);
+  const [seoSuggestions, setSeoSuggestions] = React.useState<string[]>([]);
+  const [seoLoading, setSeoLoading] = React.useState(false);
+  const debounceRef = React.useRef<any>(null);
+
+  React.useEffect(() => {
+    if (!data.headline && !data.description) {
+      setSeoScore(null);
+      setSeoSuggestions([]);
+      return;
+    }
+    setSeoLoading(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      const keyword = (data.headline || '').split(' ')[0] || '';
+      const res = await fetch('/api/news/seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ headline: data.headline, description: data.description, keyword }),
+      });
+      const result = await res.json();
+      setSeoScore(result.score);
+      setSeoSuggestions(result.suggestions);
+      setSeoLoading(false);
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [data.headline, data.description, data.shortUrl]);
+
   if (!open) return null;
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-    }}>
-      <div style={{
-        background: '#fff',
-        padding: 40,
-        borderRadius: 18,
-        minWidth: 600,
-        maxWidth: 900,
-        width: '100%',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
-        fontFamily: 'Inter, sans-serif',
-        position: 'relative',
-        maxHeight: '80vh',
-        overflowY: 'auto',
-      }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', fontSize: 28, color: '#888', cursor: 'pointer', fontWeight: 300 }}>&times;</button>
-        <h1 style={{ marginBottom: 28, fontWeight: 700, fontSize: 28, letterSpacing: -1 }}>{isAdd ? 'Add News' : 'Edit News'}</h1>
-        <div style={{ borderBottom: '1px solid #eee', marginBottom: 28 }} />
-        <label style={{ fontWeight: 500, marginBottom: 18, display: 'block' }}>Headline
-          <input name="headline" value={data.headline} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, marginTop: 6 }} />
-          {isAdd && errors.headline && <div style={{ color: 'red', fontSize: 13 }}>{errors.headline}</div>}
-        </label>
-        <label style={{ fontWeight: 500, marginBottom: 18, display: 'block' }}>Short URL
-          <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16, marginTop: 6 }} />
-        </label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-          <label style={{ fontWeight: 500 }}>Author
-            <select name="author" value={data.author} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
-              <option value="">Select Author</option>
-              {WP_USERS.map((user: any, idx: number) => (
-                <option key={idx} value={user.username}>{user.username} ({user.role})</option>
-              ))}
-            </select>
-            {isAdd && errors.author && <div style={{ color: 'red', fontSize: 13 }}>{errors.author}</div>}
-          </label>
-          <label style={{ fontWeight: 500 }}>Category
-            <select name="category" value={data.category} onChange={onChange} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
-              <option value="">Select Category</option>
-              {categories.map((cat: any) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-            {isAdd && errors.category && <div style={{ color: 'red', fontSize: 13 }}>{errors.category}</div>}
-          </label>
-          <label style={{ fontWeight: 500 }}>Image Upload
-            <input type="file" accept="image/*" onChange={onImageUpload} />
-            {data.image && typeof data.image === 'string' && data.image.startsWith('blob:') && (
-              <div style={{ marginTop: 12 }}>
-                <img src={data.image} alt="Uploaded" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, border: '1px solid #eee' }} />
-              </div>
-            )}
-          </label>
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-60 flex items-center justify-center z-50">
+      <div className="relative bg-white p-8 rounded-2xl shadow-2xl max-w-[80%] w-full max-h-[80vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 bg-transparent border-none text-gray-500 text-2xl font-light cursor-pointer">
+          &times;
+        </button>
+        <h1 className="text-2xl font-bold mb-4 text-indigo-700">{isAdd ? 'Add News' : 'Edit News'}</h1>
+        <div className="border-b border-gray-200 mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Left side: all fields except description */}
+          <div className="flex flex-col gap-4">
+            <label className="block font-semibold text-lg">Headline
+              <input name="headline" value={data.headline} onChange={onChange} className="w-full p-3 border border-gray-300 rounded-md text-lg mt-1 font-semibold" />
+              {isAdd && errors.headline && <div className="text-red-500 text-sm mt-1">{errors.headline}</div>}
+            </label>
+            <label className="block font-medium">Short URL
+              <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" className="w-full p-2 border border-gray-300 rounded-md text-base mt-1" />
+            </label>
+            <label className="block text-sm font-medium">Author
+              <select name="author" value={data.author} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-md text-sm mt-1">
+                <option value="">Select Author</option>
+                {WP_USERS.map((user: any, idx: number) => (
+                  <option key={idx} value={user.username}>{user.username} ({user.role})</option>
+                ))}
+              </select>
+              {isAdd && errors.author && <div className="text-red-500 text-xs mt-1">{errors.author}</div>}
+            </label>
+            <label className="block text-sm font-medium">Category
+              <select name="category" value={data.category} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-md text-sm mt-1">
+                <option value="">Select Category</option>
+                {categories.map((cat: any) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              {isAdd && errors.category && <div className="text-red-500 text-xs mt-1">{errors.category}</div>}
+            </label>
+            <label className="block text-sm font-medium">Image Upload
+              <input type="file" accept="image/*" onChange={onImageUpload} className="w-full p-2 border border-gray-300 rounded-md text-sm mt-1" />
+              {data.image && typeof data.image === 'string' && data.image.startsWith('blob:') && (
+                <div className="mt-2">
+                  <img src={data.image} alt="Uploaded" className="max-w-32 max-h-24 rounded-md border border-gray-200" />
+                </div>
+              )}
+            </label>
+          </div>
+          {/* Right side: description only */}
+          <div className="flex flex-col h-full">
+            <div className="font-semibold text-lg mb-2">Description</div>
+            <div className=" rounded-lg min-h-[120px]  bg-gray-100 flex-1">
+              <TextEditor setContent={onDescriptionChange} content={data.description} readonly={false} />
+              {isAdd && errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
+            </div>
+          </div>
         </div>
-        <div style={{ fontWeight: 500, marginBottom: 8 }}>Description</div>
-        <div style={{ border: '1px solid #ccc', borderRadius: 8, minHeight: 350, marginBottom: 16, padding: 8, background: '#fafbfc' }}>
-          <TextEditor setContent={onDescriptionChange} content={data.description} readonly={false} />
-          {isAdd && errors.description && <div style={{ color: 'red', fontSize: 13 }}>{errors.description}</div>}
-        </div>
-        <div style={{ borderTop: '1px solid #eee', marginTop: 36, marginBottom: 16 }} />
-        <div style={{ marginTop: 0, display: 'flex', gap: 18, justifyContent: 'flex-end' }}>
-          <button onClick={onSave} style={{ padding: '10px 36px', fontWeight: 700, fontSize: 16, background: '#222', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', letterSpacing: 1 }}>{isAdd ? 'Add' : 'Save'}</button>
-          <button onClick={onClose} style={{ padding: '10px 36px', fontWeight: 500, fontSize: 16, background: '#eee', color: '#222', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Cancel</button>
+        <div className="border-t border-gray-200 mt-6 mb-4" />
+        <div className="flex justify-end gap-4">
+          <button onClick={onSave} className="px-10 py-2 font-bold text-base bg-indigo-600 text-white rounded-md border-none cursor-pointer hover:bg-indigo-700 transition" disabled={imageUploading}>
+            {isAdd ? 'Add' : 'Save'}
+          </button>
+          {imageUploading && (
+            <div className="flex items-center gap-2 mt-2 text-indigo-600 font-semibold">
+              <svg className="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+              Uploading image...
+            </div>
+          )}
+          <button onClick={onClose} className="px-10 py-2 font-medium text-base bg-gray-200 text-gray-800 rounded-md border-none cursor-pointer hover:bg-gray-300 transition">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -134,10 +167,16 @@ export default function HomePage() {
   const [publishedIds, setPublishedIds] = React.useState<string[]>([]);
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  const [categories, setCategories] = useState<any[]>([]);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [addData, setAddData] = useState<any>({ headline: '', description: '', author: '', category: '', image: '', shortUrl: '' });
-  const [addErrors, setAddErrors] = useState<any>({});
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [addModalOpen, setAddModalOpen] = React.useState(false);
+  const [addData, setAddData] = React.useState<any>({ headline: '', description: '', author: '', category: '', image: '', shortUrl: '' });
+  const [addErrors, setAddErrors] = React.useState<any>({});
+  // Add state for delete confirmation
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  // Add image upload loading state
+  const [imageUploading, setImageUploading] = React.useState(false);
+  const [search, setSearch] = React.useState('');
 
   const WP_USERS = [
     { username: 'sourabh', password: '4xMb49FUasHQM2OJyk4nxdYR', role: 'Author' },
@@ -170,7 +209,7 @@ export default function HomePage() {
     router.push('/login');
   }
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Fetch categories from WordPress
     fetch('https://trending.niftytrader.in/wp-json/wp/v2/categories')
       .then(res => res.json())
@@ -187,12 +226,38 @@ export default function HomePage() {
 
   // Pagination logic
   const totalPages = Math.ceil(news.length / itemsPerPage);
-  const paginatedNews = news.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const filteredNews = news.filter(item => {
+    const q = search.toLowerCase();
+    return (
+      item.headline?.toLowerCase().includes(q) ||
+      item.author?.toLowerCase().includes(q) ||
+      item.description?.toLowerCase().includes(q) ||
+      categories.find((cat) => cat.id == item.category)?.name?.toLowerCase().includes(q) ||
+      item.url?.toLowerCase().includes(q)
+    );
+  });
+  const paginatedNews = filteredNews.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   async function handleScrape() {
     setScraping(true);
-    // Call all sources one by one
-    const sources = ['timesofindia', 'thehindu', 'unnews', 'economictimes', 'livemint'];
+    // Call all sources one by one (include all from scrapers.ts)
+    const sources = [
+      'timesofindia',
+      'thehindu',
+      'unnews',
+      'economictimes',
+      'livemint',
+      'bloomberg',
+      'forexfactory',
+      'reuters',
+      'mint',
+      'cnbc',
+      'zeebusiness',
+      'moneycontrol',
+      'investing',
+      'fexsheet',
+      'rssfeed'
+    ];
     for (const source of sources) {
       await fetch('/api/scrape', {
         method: 'POST',
@@ -235,16 +300,50 @@ export default function HomePage() {
     setModalOpen(false);
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setImageUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    // Get selected user from WP_USERS using author field
+    const selectedUser = WP_USERS.find((u: any) => u.username === editData.author);
+    const username = selectedUser?.username || '';
+    const appPassword = selectedUser?.password || '';
+    formData.append('username', username);
+    formData.append('appPassword', appPassword);
+
+    const res = await fetch('/api/upload-media', {
+      method: 'POST',
+      body: formData,
+    });
+
+    setImageUploading(false);
+    if (!res.ok) {
+      const err = await res.json();
+      console.error('Upload failed:', err);
+      return;
+    }
+
+    const data = await res.json();
+    setEditData((prev: any) => ({
+      ...prev,
+      image: data.id, // store only the id
+      imageAuthor: data.author, // store image author id
+    }));
+  }
+
   async function handleEditSave() {
     const updated = [...news];
-    // Ensure author is the selected username from WP_USERS
     const selectedUser = WP_USERS.find((u: any) => u.username === editData.author);
     const updatedEditData = {
       ...editData,
       author: selectedUser ? selectedUser.username : editData.author,
     };
-    if (!updatedEditData.image) delete updatedEditData.image;
-    // PATCH to backend
+    const imageId = Number(updatedEditData.image);
+    if (isNaN(imageId) || imageId <= 0) delete updatedEditData.image;
     const res = await fetch('/api/news', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -255,7 +354,6 @@ export default function HomePage() {
       updated[editIdx!] = updatedItem;
       setNews(updated);
     } else {
-      // fallback: update local state anyway
       updated[editIdx!] = { ...updated[editIdx!], ...updatedEditData };
       setNews(updated);
     }
@@ -264,30 +362,27 @@ export default function HomePage() {
     setModalOpen(false);
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    // Only set local preview, do not upload to remote API
-    const localUrl = URL.createObjectURL(file);
-    setEditData((prev: any) => ({ ...prev, image: localUrl }));
-  }
-
   async function handlePublish(newsItem: any) {
-    // Always send category id (number) to API
     let categoryId = newsItem.category;
     if (typeof categoryId !== 'number') {
       const found = categories.find((cat) => cat.id == newsItem.category || cat.slug == newsItem.category);
       categoryId = found ? found.id : null;
     }
     const selectedUser = WP_USERS.find((u: any) => u.username === newsItem.author);
+    const slug = (newsItem.headline || '').slice(0, 25).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
     const payload = {
       ...newsItem,
       categories: categoryId ? [categoryId] : [],
       wpUser: selectedUser?.username,
       wpPass: selectedUser?.password,
-      slug: newsItem.shortUrl,
+      slug,
     };
+    const imageId = Number(newsItem.image);
+    if (!isNaN(imageId) && imageId > 0) payload.featured_media = imageId;
+    // Do NOT send featured_media if imageId is not a valid positive number
     delete payload.category;
+    delete payload.image;
+    delete payload.imageAuthor;
     const res = await fetch('/api/publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -295,33 +390,11 @@ export default function HomePage() {
     });
     if (res.ok) {
       setPublishedIds((prev) => [...prev, newsItem._id]);
-      // Mark as published in state
       setNews((prev: any[]) => prev.map(n => n._id === newsItem._id ? { ...n, published: true } : n));
-      // Update published flag in DB
       await fetch('/api/news', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...newsItem, published: true }),
-      });
-    }
-  }
-
-  async function handleGenerateImage(newsItem: any, idx: number) {
-    const res = await fetch('/api/generate-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: newsItem.description }),
-    });
-    if (res.ok) {
-      const { base64 } = await res.json();
-      const updated = [...news];
-      updated[idx] = { ...updated[idx], image: `data:image/png;base64,${base64}` };
-      setNews(updated);
-      // Optionally update in DB
-      await fetch('/api/news', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updated[idx] }),
       });
     }
   }
@@ -342,6 +415,28 @@ export default function HomePage() {
     }
   }
 
+  function handleDeleteClick(id: string) {
+    setDeleteId(id);
+    setDeleteConfirmOpen(true);
+  }
+  async function handleDeleteConfirmed() {
+    if (!deleteId) return;
+    const res = await fetch('/api/news', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _id: deleteId }),
+    });
+    if (res.ok) {
+      setNews((prev: any[]) => prev.filter(n => n._id !== deleteId));
+    }
+    setDeleteConfirmOpen(false);
+    setDeleteId(null);
+  }
+  function handleDeleteCancel() {
+    setDeleteConfirmOpen(false);
+    setDeleteId(null);
+  }
+
   function handleAddChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     let value = e.target.value;
     let updated = { ...addData, [e.target.name]: value };
@@ -356,8 +451,35 @@ export default function HomePage() {
   async function handleAddImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    const localUrl = URL.createObjectURL(file);
-    setAddData((prev: any) => ({ ...prev, image: localUrl }));
+    setImageUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    // Get selected user from WP_USERS using author field
+    const selectedUser = WP_USERS.find((u: any) => u.username === addData.author);
+    const username = selectedUser?.username || '';
+    const appPassword = selectedUser?.password || '';
+    formData.append('username', username);
+    formData.append('appPassword', appPassword);
+
+    const res = await fetch('/api/upload-media', {
+      method: 'POST',
+      body: formData,
+    });
+
+    setImageUploading(false);
+    if (!res.ok) {
+      const err = await res.json();
+      console.error('Upload failed:', err);
+      return;
+    }
+
+    const data = await res.json();
+    setAddData((prev: any) => ({
+      ...prev,
+      image: data.id, // store only the id
+      imageAuthor: data.author, // store image author id
+    }));
   }
   function validateAddForm() {
     const errors: any = {};
@@ -372,7 +494,8 @@ export default function HomePage() {
     setAddErrors(errors);
     if (Object.keys(errors).length > 0) return;
     const payload = { ...addData };
-    if (!payload.image) delete payload.image;
+    const imageId = Number(payload.image);
+    if (isNaN(imageId) || imageId <= 0) delete payload.image;
     const res = await fetch('/api/news', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -388,109 +511,124 @@ export default function HomePage() {
     }
   }
 
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  }
+
   return (
  
 
-<main className="container">
-      <div className="header">
-        <h2 className="">News Dashboard</h2>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="btn btn-secondary"
-            style={{ fontWeight: 700 }}
-          >
-            + Add New News
-          </button>
-          <button
-            onClick={handleScrape}
-            disabled={scraping}
-            className={`btn ${scraping ? 'btn-disabled' : ''}`}
-          >
-            {scraping ? 'Scraping...' : 'Fetch Latest News'}
-          </button>
-          <button
-            onClick={handleLogout}
-            className="btn btn-danger"
-            style={{ marginLeft: 16 }}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
+<main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
+  {/* Navbar/Header */}
+  <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>
+    <span className="text-3xl font-bold text-blue-700">News Dashboard</span>
+    <button
+      onClick={handleLogout}
+      className="flex items-center gap-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 font-semibold border border-red-600 transition-all duration-150 text-sm"
+      style={{minHeight: '32px'}}
+    >
+      <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+    </button>
+  </div>
 
-      <div className="table-wrapper">
-        <table className="table">
+  {/* Controls above table */}
+  <div className="w-full flex justify-center border-b border-gray-200 bg-gray-50">
+    <div className="flex flex-col md:flex-row md:items-center justify-between w-full max-w-full px-8 py-3 gap-3">
+      <div className="flex gap-3 items-center">
+        <button
+          onClick={() => setAddModalOpen(true)}
+          className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded border border-blue-700 hover:bg-blue-700 font-semibold transition-all duration-150 text-sm"
+          style={{minHeight: '32px'}}
+        >
+          <FontAwesomeIcon icon={faPlus} /> Add News
+        </button>
+        <button
+          onClick={handleScrape}
+          disabled={scraping}
+          className={`flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded border border-gray-400 font-semibold transition-all duration-150 text-sm ${scraping ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200'}`}
+          style={{minHeight: '32px'}}
+        >
+          <FontAwesomeIcon icon={faUpload} /> {scraping ? 'Scraping...' : 'Fetch Latest News'}
+        </button>
+      </div>
+      <div className="flex-1 flex justify-end">
+        <input
+          type="text"
+          placeholder="Search news..."
+          className="w-full md:w-72 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200"
+          value={search}
+          onChange={handleSearchChange}
+          style={{minHeight: '40px'}}
+        />
+      </div>
+    </div>
+  </div>
+
+      <div className="table-wrapper w-full overflow-x-auto">
+        <table className="w-full text-sm border border-gray-300 bg-white">
           <thead>
-            <tr>
-              <th>Sr No</th>
-              <th>Headline</th>
-              <th>Author</th>
-              <th>Time</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>URL</th>
-              <th>Status</th>
-              <th>Action</th>
-              <th>Publish</th>
+            <tr className="bg-gray-100">
+              <th className="p-3 font-bold border-b border-gray-300 text-left">#</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Headline</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Author</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Time</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Description</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Category</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">URL</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Status</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Action</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Publish</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} className="table-loading">
-                  Loading...
-                </td>
+                <td colSpan={10} className="text-center py-8 text-gray-400 border-b border-gray-300">Loading...</td>
               </tr>
             ) : news.length === 0 ? (
               <tr>
-                <td colSpan={10} className="table-empty">
-                  No news found.
-                </td>
+                <td colSpan={10} className="text-center py-8 text-gray-400 border-b border-gray-300">No news found.</td>
               </tr>
             ) : (
               paginatedNews.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td className="ellipsis" title={item.headline}>
-                    {item.headline}
+                <tr key={idx} className="hover:bg-gray-50 transition">
+                  <td className="p-3 border-b border-gray-300 align-middle">{currentPage * itemsPerPage - itemsPerPage + idx + 1}</td>
+                  <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={item.headline}>{item.headline}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle">{item.author || 'N/A'}</td>
+                  <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle">{formatDate(item.time)}</td>
+                  <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={item.description.replace(/<[^>]+>/g, '')}>{item.description.replace(/<[^>]+>/g, '')}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle">{categories.find((cat) => cat.id == item.category)?.name || item.category}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle">
+                    <span className="inline-flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition cursor-pointer">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" title="Open Link">
+                        <FontAwesomeIcon icon={faLink} />
+                      </a>
+                    </span>
                   </td>
-                  <td>{item.author || 'N/A'}</td>
-                  <td className="time">{formatDate(item.time)}</td>
-                  <td className="ellipsis description" title={item.description.replace(/<[^>]+>/g, '')}>
-                    {/* Show only plain text, single line, ellipsis */}
-                    {item.description.replace(/<[^>]+>/g, '')}
+                  <td className="p-3 border-b border-gray-300 align-middle">
+                    {item.published ? (
+                      <span className="inline-flex items-center gap-2 px-2 py-1 bg-green-100 text-green-700 rounded font-semibold">
+                        <FontAwesomeIcon icon={faCheck} className="text-green-600" /> Published
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded font-semibold">
+                        <FontAwesomeIcon icon={faClock} className="text-yellow-600" /> Pending
+                      </span>
+                    )}
                   </td>
-                  <td>
-                    {categories.find((cat) => cat.id == item.category)?.name || item.category}
+                  <td className="p-3 border-b border-gray-300 flex gap-2 align-middle">
+                    <button className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition" onClick={() => handleEdit(currentPage * itemsPerPage - itemsPerPage + idx)} title="Edit"><FontAwesomeIcon icon={faEdit} /></button>
+                    <button className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition" onClick={() => handleDeleteClick(item._id)} title="Delete"><FontAwesomeIcon icon={faTrash} /></button>
                   </td>
-                  <td>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      Link
-                    </a>
-                  </td>
-                  <td>{item.published ? 'Published' : 'Pending'}</td>
-                  <td>
+                  <td className="p-3 border-b border-gray-300 align-middle">
                     <button
-                      className="btn btn-secondary"
-                      onClick={() => handleEdit((currentPage - 1) * itemsPerPage + idx)}
-                    >
-                      Edit
-                    </button>
-                    &nbsp;
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(item._id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      className={`btn ${publishedIds.includes(item._id) ? 'btn-disabled' : 'btn-secondary'}`}
+                      className={`flex items-center gap-1 px-3 py-1 border text-sm font-semibold transition ${!item.author ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed' : publishedIds.includes(item._id) ? 'bg-green-100 text-green-700 border-green-400 cursor-not-allowed' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600'}`}
                       onClick={() => handlePublish(item)}
-                      disabled={publishedIds.includes(item._id)}
+                      disabled={!item.author}
+                      title={!item.author ? 'Please edit this news and select an author' : ''}
                     >
+                      <FontAwesomeIcon icon={faUpload} />
                       {publishedIds.includes(item._id) ? 'Published' : 'Publish'}
                     </button>
                   </td>
@@ -502,24 +640,39 @@ export default function HomePage() {
       </div>
 
       {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="btn btn-pagination"
-          >
-            Prev
-          </button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="btn btn-pagination"
-          >
-            Next
-          </button>
+        <div className="flex justify-end items-center gap-6 mt-2 px-2">
+          <div className="text-sm text-gray-700">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, news.length)} of {news.length} entries
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-sm disabled:opacity-40"
+            >
+              &#60;
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) =>
+              (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2) ? (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 border border-gray-300 text-sm font-semibold transition ${currentPage === page ? 'bg-white text-blue-700 border-blue-500' : 'bg-gray-100 text-gray-700 hover:bg-white'}`}
+                >
+                  {page}
+                </button>
+              ) : (
+                (page === currentPage - 3 || page === currentPage + 3) && <span key={page} className="px-2 text-gray-400">...</span>
+              )
+            )}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-sm disabled:opacity-40"
+            >
+              &#62;
+            </button>
+          </div>
         </div>
       )}
 
@@ -533,6 +686,7 @@ export default function HomePage() {
         categories={categories}
         onDescriptionChange={handleDescriptionChange}
         WP_USERS={WP_USERS}
+        imageUploading={imageUploading}
       />
       {addModalOpen && (
         <EditModal
@@ -547,7 +701,23 @@ export default function HomePage() {
           WP_USERS={WP_USERS}
           errors={addErrors}
           isAdd={true}
+          imageUploading={imageUploading}
         />
+      )}
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center">
+            <div className="mb-3">
+              <svg className="w-12 h-12 text-red-500 mx-auto" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>
+            </div>
+            <div className="text-lg font-semibold mb-6 text-center text-red-700">Are you sure you want to delete this news item?</div>
+            <div className="flex justify-center gap-4 w-full">
+              <button onClick={handleDeleteConfirmed} className="px-7 py-2 bg-red-600 text-white rounded-lg font-bold shadow hover:bg-red-700 transition-all text-base">Yes, Delete</button>
+              <button onClick={handleDeleteCancel} className="px-7 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium shadow hover:bg-gray-200 transition-all text-base">Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
  </main>
 

@@ -9,6 +9,7 @@ const NewsSchema = new Schema({
   category: String,
   source: String,
   url: String,
+  published: { type: Boolean, default: false },
 });
 
 const News = models.News || mongoose.model('News', NewsSchema);

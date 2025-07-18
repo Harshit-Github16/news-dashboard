@@ -15,7 +15,8 @@ import {
   scrapeZeeBusiness,
   scrapeMoneycontrol,
   scrapeInvesting,
-  scrapeFexsheet
+  scrapeFexsheet,
+  scrapeRssFeeds
 } from '@/utils/scrapers';
 import { rewriteNews } from '@/utils/aiRewriter';
 
@@ -34,6 +35,7 @@ const scrapers: any = {
   moneycontrol: scrapeMoneycontrol,
   investing: scrapeInvesting,
   fexsheet: scrapeFexsheet,
+  rssfeed: scrapeRssFeeds
 };
 
 export async function POST(req: NextRequest) {
@@ -49,7 +51,9 @@ export async function POST(req: NextRequest) {
   const scraped = (await scraper()).slice(0, 5); // Limit to 5 news items
   const rewritten = [];
   for (const news of scraped) {
-    const regen = await rewriteNews(news);
+    // Generate slug from headline
+    const slug = (news.headline || '').slice(0, 25).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+    const regen = await rewriteNews({ ...news, slug });
     // Check for duplicate by url only
     const exists = await News.findOne({ url: regen.url });
     if (!exists) {

@@ -1,10 +1,13 @@
 'use client'
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faNewspaper } from '@fortawesome/free-solid-svg-icons';
 
 export default function LoginPage() {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   function handleLoginChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -29,36 +32,60 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <form onSubmit={handleLoginSubmit} style={{ minWidth: 320, background: '#fff', padding: 32, borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-        <h2 style={{ marginBottom: 24, textAlign: 'center' }}>Login</h2>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>Username</label>
-          <input
-            type="text"
-            name="username"
-            value={loginForm.username}
-            onChange={handleLoginChange}
-            style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
-            autoComplete="username"
-          />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-400 relative overflow-hidden">
+      {/* Top-left SVG */}
+      <svg className="absolute top-0 left-0 w-48 h-48 opacity-10 z-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="100" fill="#fff" />
+        <rect x="60" y="60" width="80" height="20" rx="4" fill="#2563eb" />
+        <rect x="60" y="90" width="50" height="10" rx="3" fill="#2563eb" />
+        <rect x="60" y="105" width="70" height="10" rx="3" fill="#2563eb" />
+      </svg>
+      {/* Bottom-right SVG */}
+      <svg className="absolute bottom-0 right-0 w-56 h-56 opacity-10 z-0" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="110" cy="110" r="110" fill="#fff" />
+        <rect x="80" y="120" width="90" height="18" rx="4" fill="#2563eb" />
+        <rect x="80" y="145" width="60" height="10" rx="3" fill="#2563eb" />
+        <rect x="80" y="160" width="80" height="10" rx="3" fill="#2563eb" />
+      </svg>
+      <div className="w-full max-w-md bg-white rounded shadow-lg p-10 flex flex-col items-center z-10" style={{borderRadius: '6px'}}>
+        <FontAwesomeIcon icon={faNewspaper} className="text-5xl text-blue-600 mb-4" />
+        <div className="text-xl font-bold text-blue-700 mb-6 tracking-wide">NEWS DASHBOARD</div>
+        <form onSubmit={handleLoginSubmit} className="w-full">
+          <div className="mb-6">
+            <input
+              type="text"
+              name="username"
+              value={loginForm.username}
+              onChange={handleLoginChange}
+              placeholder="Username"
+              className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-blue-600 focus:ring-0 text-base bg-transparent outline-none"
+              autoComplete="username"
+              style={{borderRadius: 0}}
+            />
+          </div>
+          <div className="mb-6">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={loginForm.password}
+              onChange={handleLoginChange}
+              placeholder="Password"
+              className="w-full px-0 py-2 border-0 border-b border-gray-300 focus:border-blue-600 focus:ring-0 text-base bg-transparent outline-none"
+              autoComplete="current-password"
+              style={{borderRadius: 0}}
+            />
+          </div>
+          {loginError && <div className="text-red-500 mb-4 font-semibold text-center text-sm">{loginError}</div>}
+          <button type="submit" className="w-full px-0 py-2 font-bold text-base bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm" style={{borderRadius: 0}}>
+            LOGIN
+          </button>
+        </form>
+        <div className="w-full mt-6 bg-gray-50 border border-gray-200 rounded p-4 text-xs text-gray-700">
+          <div className="font-semibold mb-1">Dummy Credentials:</div>
+          <div><span className="font-medium">username</span> - news-admin</div>
+          <div><span className="font-medium">password</span> - 4862</div>
         </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500 }}>Password</label>
-          <input
-            type="password"
-            name="password"
-            value={loginForm.password}
-            onChange={handleLoginChange}
-            style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}
-            autoComplete="current-password"
-          />
-        </div>
-        {loginError && <div style={{ color: 'red', marginBottom: 12 }}>{loginError}</div>}
-        <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: 10, fontWeight: 600, fontSize: 16 }}>
-          Login
-        </button>
-      </form>
-    </main>
+      </div>
+    </div>
   );
 } 
