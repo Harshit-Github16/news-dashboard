@@ -112,14 +112,14 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
               </select>
               {isAdd && errors.category && <div className="text-red-500 text-xs mt-1">{errors.category}</div>}
             </label>
-            <label className="block text-sm font-medium">Image Upload
+            {/* <label className="block text-sm font-medium">Image Upload
               <input type="file" accept="image/*" onChange={onImageUpload} className="w-full p-2 border border-gray-300 text-sm mt-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" disabled={!data.author} />
               {data.image && typeof data.image === 'string' && data.image.startsWith('blob:') && (
                 <div className="mt-2">
                   <img src={data.image} alt="Uploaded" className="max-w-32 max-h-24 border border-gray-200" />
                 </div>
               )}
-            </label>
+            </label> */}
           </div>
           {/* Right side: description only */}
           <div className="flex flex-col h-full">
