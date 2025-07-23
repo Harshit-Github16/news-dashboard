@@ -10,6 +10,11 @@ const NewsSchema = new Schema({
   source: String,
   url: String,
   published: { type: Boolean, default: false },
+  title: String,
+  zone: String,
+  sentiment: Number,
+  weightage: String,
+  createddate: String,
 });
 
 const News = models.News || mongoose.model('News', NewsSchema);

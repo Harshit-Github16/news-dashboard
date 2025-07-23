@@ -1,41 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/utils/db';
 import News from '@/models/News';
-import { 
-  scrapeTimesOfIndia, 
-  scrapeTheHindu,
-  scrapeUNNews,
-  scrapeEconomicTimes,
-  scrapeLivemint,
-  scrapeBloomberg,
-  scrapeForexfactory,
-  scrapeReuters,
-  scrapeMint,
-  scrapeCNBC,
-  scrapeZeeBusiness,
+import {
+  scrapeTimesOfIndia,
   scrapeMoneycontrol,
-  scrapeInvesting,
-  scrapeFexsheet,
-  scrapeRssFeeds
+  scrapeCNBC,
+  scrapeRssFeeds,
+  scrapeLivemintNews,
+  scrapeEconomicTimesNews,
+  scrapeNews18News,
+  scrapeMoneycontrolEconomy,
+  scrapeIndiaTodayWorldNews,
+  scrapeLivemintWorldNews,
+  scrapeMoneycontrolWorldNews,
+  scrapeEconomicTimesWorldNews
 } from '@/utils/scrapers';
 import { rewriteNews } from '@/utils/aiRewriter';
 
 const scrapers: any = {
   timesofindia: scrapeTimesOfIndia,
-  thehindu: scrapeTheHindu,
-  unnews: scrapeUNNews,
-  economictimes: scrapeEconomicTimes,
-  livemint: scrapeLivemint,
-  bloomberg: scrapeBloomberg,
-  forexfactory: scrapeForexfactory,
-  reuters: scrapeReuters,
-  mint: scrapeMint,
-  cnbc: scrapeCNBC,
-  zeebusiness: scrapeZeeBusiness,
   moneycontrol: scrapeMoneycontrol,
-  investing: scrapeInvesting,
-  fexsheet: scrapeFexsheet,
-  rssfeed: scrapeRssFeeds
+  cnbc: scrapeCNBC,
+  rssfeed: scrapeRssFeeds,
+  livemintnews: scrapeLivemintNews,
+  economictimesnews: scrapeEconomicTimesNews,
+  news18news: scrapeNews18News,
+  moneycontroleconomy: scrapeMoneycontrolEconomy,
+  indiatodayworld: scrapeIndiaTodayWorldNews,
+  livemintworld: scrapeLivemintWorldNews,
+  moneycontrolworld: scrapeMoneycontrolWorldNews,
+  economictimesworld: scrapeEconomicTimesWorldNews
 };
 
 export async function POST(req: NextRequest) {
@@ -49,21 +43,42 @@ export async function POST(req: NextRequest) {
   }
   await dbConnect();
   const scraped = (await scraper()).slice(0, 5); // Limit to 5 news items
-  const rewritten = [];
+  const saved = [];
   for (const news of scraped) {
-    // Generate slug from headline
-    const slug = (news.headline || '').slice(0, 25).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
-    const regen = await rewriteNews({ ...news, slug });
-    // Check for duplicate by url only
-    const exists = await News.findOne({ url: regen.url });
-    if (!exists) {
-      const created = await News.create(regen);
-      rewritten.push(created);
-    } else {
-      // Optionally update existing news with new data
-      await News.updateOne({ url: regen.url }, regen);
-      rewritten.push(await News.findOne({ url: regen.url }));
+    const slug = (news.headline || news.title || '').slice(0, 25).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+    const url = news.url;
+    if (!url || !(news.title || news.headline) || !news.description) continue;
+    let toSave = null;
+    try {
+      const rewrittenArr = await rewriteNews([{ ...news, slug }]);
+      if (Array.isArray(rewrittenArr) && rewrittenArr.length > 0 && rewrittenArr[0]?.url && rewrittenArr[0]?.title && rewrittenArr[0]?.description) {
+        toSave = rewrittenArr[0];
+      }
+    } catch (err) {
+      // Ignore error, fallback to original
+    }
+    if (!toSave) {
+      toSave = { ...news, slug };
+    }
+    // Normalize sentiment: map -5 to 5 => 0 to 5
+    if (typeof toSave.sentiment === 'number') {
+      // Clamp between -5 and 5 just in case
+      let s = Math.max(-5, Math.min(5, toSave.sentiment));
+      toSave.sentiment = Math.round(((s + 5) / 10) * 5); // -5=>0, 0=>2.5, 5=>5
+    }
+    // Only save if both title and description are present and meet length requirements
+    const titleText = toSave.title || toSave.headline || '';
+    const descText = toSave.description || '';
+    if (titleText.length >= 50 && descText.length >= 100) {
+      const exists = await News.findOne({ url: toSave.url });
+      if (!exists) {
+        const created = await News.create(toSave);
+        saved.push(created);
+      } else {
+        await News.updateOne({ url: toSave.url }, toSave);
+        saved.push(await News.findOne({ url: toSave.url }));
+      }
     }
   }
-  return NextResponse.json({ count: rewritten.length, news: rewritten });
+  return NextResponse.json({ count: saved.length, news: saved });
 } 

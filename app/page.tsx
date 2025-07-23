@@ -242,20 +242,17 @@ export default function HomePage() {
     // Call all sources one by one (include all from scrapers.ts)
     const sources = [
       'timesofindia',
-      'thehindu',
-      'unnews',
-      'economictimes',
-      'livemint',
-      'bloomberg',
-      'forexfactory',
-      'reuters',
-      'mint',
-      'cnbc',
-      'zeebusiness',
       'moneycontrol',
-      'investing',
-      'fexsheet',
-      'rssfeed'
+      'cnbc',
+      'rssfeed',
+      'livemintnews',
+      'economictimesnews',
+      'news18news',
+      'moneycontroleconomy',
+      'indiatodayworld',
+      'livemintworld',
+      'moneycontrolworld',
+      'economictimesworld'
     ];
     for (const source of sources) {
       await fetch('/api/scrape', {
@@ -577,6 +574,9 @@ export default function HomePage() {
               <th className="p-3 font-bold border-b border-gray-300 text-left">Time</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Description</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Category</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Zone</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Sentiment</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Weightage</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">URL</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Status</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Action</th>
@@ -596,11 +596,14 @@ export default function HomePage() {
               paginatedNews.map((item, idx) => (
                 <tr key={idx} className="hover:bg-gray-50 transition">
                   <td className="p-3 border-b border-gray-300 align-middle">{currentPage * itemsPerPage - itemsPerPage + idx + 1}</td>
-                  <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={item.headline}>{item.headline}</td>
-                  <td className="p-3 border-b border-gray-300 align-middle">{item.author || 'N/A'}</td>
-                  <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle">{formatDate(item.time)}</td>
-                  <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={item.description.replace(/<[^>]+>/g, '')}>{item.description.replace(/<[^>]+>/g, '')}</td>
-                  <td className="p-3 border-b border-gray-300 align-middle">{categories.find((cat) => cat.id == item.category)?.name || item.category}</td>
+                  <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={item.title}>{item.title}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.author || 'N/A'}</td>
+                  <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle">{item.createddate}</td>
+                  <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={(item.description || '').replace(/<[^>]+>/g, '')}>{(item.description || '').replace(/<[^>]+>/g, '')}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle capitalize">{categories.find((cat) => cat.id == item.category)?.name || item.category}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.zone || '-'}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle">{typeof item.sentiment === 'number' ? `${item.sentiment}/5` : '-'}</td>
+                  <td className={`p-3 border-b border-gray-300 align-middle ${item.weightage === 'High' ? 'text-red-600 font-bold' : item.weightage === 'Low' ? 'text-yellow-600 font-bold' : ''}`}>{item.weightage || '-'}</td>
                   <td className="p-3 border-b border-gray-300 align-middle">
                     <span className="inline-flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition cursor-pointer">
                       <a href={item.url} target="_blank" rel="noopener noreferrer" title="Open Link">
