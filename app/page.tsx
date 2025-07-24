@@ -88,8 +88,8 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
           {/* Left side: all fields except description */}
           <div className="flex flex-col gap-4">
             <label className="block font-semibold text-base">Headline
-              <input name="headline" value={data.headline} onChange={onChange} className="w-full p-2 border border-gray-300 text-base mt-1 font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
-              {isAdd && errors.headline && <div className="text-red-500 text-sm mt-1">{errors.headline}</div>}
+              <input name="headline" value={data.title} onChange={onChange} className="w-full p-2 border border-gray-300 text-base mt-1 font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
+              {isAdd && errors.title && <div className="text-red-500 text-sm mt-1">{errors.title}</div>}
             </label>
             <label className="block font-medium text-sm">Short URL
               <input name="shortUrl" value={data.shortUrl || ''} onChange={onChange} placeholder="Paste or generate short URL" className="w-full p-2 border border-gray-300 text-base mt-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
@@ -185,6 +185,8 @@ export default function HomePage() {
     { username: 'pradeep', password: 'bD72QVvfOqSNzFgzk78q25Sy', role: 'Author' },
     { username: 'Ravindra Dayma', password: 'OcX3aMF80lUXdJAMp0SwQLXP', role: 'Author' },
     { username: 'snehagandhi', password: 'qCBrBSxu3cJzlyraLy5NgZaW', role: 'Author' },
+    { username: 'RuchikaDave', password: 'Yov6XpW57I7CnrKjur6fpkqi', role: 'Author' },
+
   ];
 
   // Login state
@@ -244,11 +246,11 @@ export default function HomePage() {
       'timesofindia',
       'moneycontrol',
       'cnbc',
-      'rssfeed',
+              // 'rssfeed',
       'livemintnews',
       'economictimesnews',
       'news18news',
-      'moneycontroleconomy',
+        'moneycontroleconomy',
       'indiatodayworld',
       'livemintworld',
       'moneycontrolworld',

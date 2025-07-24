@@ -1,10 +1,12 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { chromium } from 'playwright';
-import Parser from 'rss-parser';
+import moment from 'moment'; import Parser from 'rss-parser';
 // @ts-ignore: If you see a type error for date-fns, run 'npm install date-fns'
 import { format } from 'date-fns';
 import type { Cheerio, CheerioAPI } from 'cheerio';
+import { create } from 'domain';
+import https from 'https';
 
 // Helper function to create a news object
 function createNewsItem(
@@ -28,14 +30,160 @@ function createNewsItem(
   };
 }
 
+const scrapeTimesOfIndia2 = async () => {
+  try {
+    // Configure HTTPS agent with modern TLS settings
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    // Make HTTP request with updated headers and agent
+    const response = await axios.get('https://timesofindia.indiatimes.com/briefs', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000, // 30-second timeout
+    });
+
+    console.log('Successfully fetched Times of India page');
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.brief_box'); // Adjust selector to match actual DOM structure
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h2').first().text().trim() || $el.find('h1').first().text().trim();
+      const description = $el.find('p').first().text().trim();
+      const a = $el.find('a').first();
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `https://timesofindia.indiatimes.com${href}`
+        : '';
+
+      // Apply finance category and zone filters
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) continue; // Skip non-finance-related news
+      const zone = getZone(title + ' ' + description);
+
+      news.push({
+        title,
+        description,
+        url,
+        time: today,
+        image: '',
+        author: 'Times of India',
+        category,
+        zone,
+        source: 'timesofindia',   
+      });
+    }
+
+    console.log('Scraped news:', news);
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
+};
+
+
+
+const scrapeCNBC2 = async () => {
+  try {
+
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    const response = await axios.get('https://www.cnbc.com/world/?region=world', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000,
+    });
+
+    console.log('Successfully fetched Times of India page');
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.PageBuilder-containerFluidWidths .PageBuilder-col .HomePageInternational-riverPlus .RiverPlusCard-container .RiverPlusCard-cardLeft .RiverHeadline-headline'); // Adjust selector to match actual DOM structure
+   
+   console.log("wrapperwrapperwrapperwrapper",wrapper.length);
+   
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h2').first().text().trim() || $el.find('h1').first().text().trim();
+      const description = $el.find('p').first().text().trim();
+      const a = $el.find('a').first();
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `https://timesofindia.indiatimes.com${href}`
+        : '';
+
+      // Apply finance category and zone filters
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) continue; // Skip non-finance-related news
+      const zone = getZone(title + ' ' + description);
+
+      news.push({
+        title,
+        description,
+        url,
+        time: today,
+        image: '',
+        author: 'Times of India',
+        category,
+        zone,
+        source: 'timesofindia',   
+      });
+    }
+
+    console.log('Scraped news:', news);
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
+};
+
 function getFinanceCategory(text: string) {
   if (!text) return null;
   const lower = text.toLowerCase();
-  if (lower.includes('stock')) return 'stock';
+  if (lower.includes('stocks')) return 'stocks';
   if (lower.includes('nifty')) return 'nifty';
   if (lower.includes('sensex')) return 'sensex';
-  if (lower.includes('bse')) return 'bse';
-  if (lower.includes('nse')) return 'nse';
   if (lower.includes('ipo')) return 'ipo';
   if (lower.includes('dividend')) return 'dividend';
   if (lower.includes('market')) return 'market';
@@ -49,7 +197,7 @@ function getFinanceCategory(text: string) {
   if (lower.includes('inflation')) return 'inflation';
   if (lower.includes('banknifty')) return 'banknifty';
   if (lower.includes('bank')) return 'bank';
-  if (lower.includes('share')) return 'share';
+  if (lower.includes('share market')) return 'share market';
   if (lower.includes('sebi')) return 'sebi';
   if (lower.includes('rbi')) return 'rbi';
   if (lower.includes('fintech')) return 'fintech';
@@ -61,7 +209,6 @@ function getFinanceCategory(text: string) {
   if (lower.includes('fiscal')) return 'fiscal';
   if (lower.includes('revenue')) return 'revenue';
   if (lower.includes('profit')) return 'profit';
-  if (lower.includes('loss')) return 'loss';
   if (lower.includes('merger')) return 'merger';
   if (lower.includes('acquisition')) return 'acquisition';
   if (lower.includes('funding')) return 'funding';
@@ -75,8 +222,6 @@ function getFinanceCategory(text: string) {
   if (lower.includes('rupee')) return 'rupee';
   if (lower.includes('dollar')) return 'dollar';
   if (lower.includes('forex')) return 'forex';
-  if (lower.includes('export')) return 'export';
-  if (lower.includes('import')) return 'import';
   if (lower.includes('trade')) return 'trade';
   if (lower.includes('budget')) return 'budget';
   if (lower.includes('taxation')) return 'taxation';
@@ -84,11 +229,16 @@ function getFinanceCategory(text: string) {
   if (lower.includes('msme')) return 'msme';
   if (lower.includes('nbfc')) return 'nbfc';
   if (lower.includes('insurance')) return 'insurance';
-  if (lower.includes('pension')) return 'pension';
   if (lower.includes('infrastructure')) return 'infrastructure';
   if (lower.includes('disinvestment')) return 'disinvestment';
   if (lower.includes('psu')) return 'psu';
   return null;
+}
+function getZone(text: string) {
+  if (!text) return 'world';
+  const lower = text.toLowerCase();
+  if (lower.includes('india') || lower.includes('nifty') || lower.includes('sensex') || lower.includes('bse') || lower.includes('nse') || lower.includes('rupee') || lower.includes('rbi')) return 'india';
+  return 'world';
 }
 
 // Helper to get today's date in YYYY-MM-DD
@@ -101,7 +251,7 @@ function extractTitleAndDescription($element: cheerio.Cheerio<any>) {
   let title = '';
   let description = '';
 
-  // Title: h1 > h2 > a (in order, first found)
+  // Title: h1 > h2 > a (strict order, first found, never p/span)
   const h1 = $element.find('h1').first();
   if (h1.length && h1.text().trim()) {
     title = h1.text().trim();
@@ -117,7 +267,7 @@ function extractTitleAndDescription($element: cheerio.Cheerio<any>) {
     }
   }
 
-  // Description: first p, else first span
+  // Description: first p, else first span (never h2)
   const p = $element.find('p').first();
   if (p.length && p.text().trim()) {
     description = p.text().trim();
@@ -133,91 +283,132 @@ function extractTitleAndDescription($element: cheerio.Cheerio<any>) {
 
 // Times of India
 export async function scrapeTimesOfIndia() {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto('https://timesofindia.indiatimes.com/briefs', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(5000); // Wait for JS content
-  const html = await page.content();
-  const news = await page.$$eval('.brief_box', items => {
-    // This part runs in browser context, so can't use extractTitleAndDescription directly
-    // Instead, extract h1-h6 and p manually
-    const results: any[] = [];
-    items.forEach(box => {
-      let title = '';
-      for (let i = 1; i <= 6; i++) {
-        const h = box.querySelector('h' + i);
-        if (h && (h as HTMLElement).innerText && (h as HTMLElement).innerText.trim()) {
-          title = (h as HTMLElement).innerText.trim();
-          break;
-        }
-      }
-      let description = '';
-      const p = box.querySelector('p');
-      if (p && (p as HTMLElement).innerText && (p as HTMLElement).innerText.trim()) {
-        description = (p as HTMLElement).innerText.trim();
-      }
-      const a = box.querySelector('a');
-      const url = a && (a as HTMLAnchorElement).href ? (a as HTMLAnchorElement).href.startsWith('http') ? (a as HTMLAnchorElement).href : 'https://timesofindia.indiatimes.com' + (a as HTMLAnchorElement).getAttribute('href') : '';
-      results.push({
-        title,
-        description,
-        url,
-        author: 'Times of India',
-        time: new Date().toISOString(),
-        image: '',
-        category: 'general',
-        source: 'timesofindia',
-      });
-    });
-    return results.filter(n => n.title && n.url);
-  });
-  await browser.close();
-  const filtered = news.map(n => {
-    const cat = getFinanceCategory(n.title) || getFinanceCategory(n.description);
-    if (!cat) return null;
-    return { ...n, category: cat };
-  }).filter(Boolean);
-  return filtered;
+  const news = await scrapeTimesOfIndia2();
+  // let browser;
+  // try {
+  //   // Launch browser with specific configurations
+  //   browser = await chromium.launch({
+  //     headless: true, // Use headless mode for production
+  //     args: ['--no-sandbox', '--disable-setuid-sandbox'], // Common args for compatibility
+  //   });
+
+  //   const context = await browser.newContext({
+  //     ignoreHTTPSErrors: true, // Temporary workaround for SSL issues
+  //     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', // Modern user-agent
+  //   });
+
+  //   const page = await context.newPage();
+  //   console.log('Navigating to Times of India...');
+
+  //   // Navigate with increased timeout and wait until network is idle
+  //   await page.goto('https://timesofindia.indiatimes.com/briefs', {
+  //     waitUntil: 'networkidle', // Wait for network to be idle
+  //     timeout: 60000, // Increase timeout to 60 seconds
+  //   });
+
+  //   console.log('Page loaded, waiting for content...');
+  //   await page.waitForTimeout(5000); // Wait for dynamic content
+
+  //   const news = await page.$$eval('.brief_box', (items) => {
+  //     const results: any[] = [];
+  //     items.forEach((box) => {
+  //       let title = '';
+  //       for (let i = 1; i <= 6; i++) {
+  //         const h = box.querySelector(`h${i}`);
+  //         if (h && (h as HTMLElement).innerText && (h as HTMLElement).innerText.trim()) {
+  //           title = (h as HTMLElement).innerText.trim();
+  //           break;
+  //         }
+  //       }
+  //       let description = '';
+  //       const p = box.querySelector('p');
+  //       if (p && (p as HTMLElement).innerText && (p as HTMLElement).innerText.trim()) {
+  //         description = (p as HTMLElement).innerText.trim();
+  //       }
+  //       const a = box.querySelector('a');
+  //       const url = a && (a as HTMLAnchorElement).href
+  //         ? (a as HTMLAnchorElement).href.startsWith('http')
+  //           ? (a as HTMLAnchorElement).href
+  //           : 'https://timesofindia.indiatimes.com' + (a as HTMLAnchorElement).getAttribute('href')
+  //         : '';
+  //       const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //       if (!category) return; // Skip non-finance-related news
+  //       const zone = getZone(title + ' ' + description);
+  //       results.push({
+  //         title,
+  //         description,
+  //         url,
+  //         author: 'Times of India',
+  //         time: new Date().toISOString(),
+  //         image: '',
+  //         category,
+  //         zone,
+  //         source: 'timesofindia',
+  //       });
+  //     });
+  //     return results.filter((n) => n.title && n.url);
+  //   });
+
+  //   console.log(`Scraped ${news.length} articles from Times of India.`);
+  //   return news;
+  // } catch (error:any) {
+  //   console.error('Error scraping Times of India:', error);
+  //   throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  // } finally {
+  //   if (browser) {
+  //     await browser.close();
+  //     console.log('Browser closed.');
+  //   }
+  // }
+  return news;
 }
 
 // CNBC
 export async function scrapeCNBC() {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto('https://www.cnbc.com/world/?region=world', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(5000);
-  const news = await page.$$eval('div.Card-titleContainer', items => {
-    // This part runs in browser context
-    return Array.from(items).map(box => {
-      let title = '';
-      for (let i = 1; i <= 6; i++) {
-        const h = box.querySelector('h' + i);
-        if (h && (h as HTMLElement).innerText && (h as HTMLElement).innerText.trim()) {
-          title = (h as HTMLElement).innerText.trim();
-          break;
-        }
-      }
-      let description = '';
-      const p = box.querySelector('p');
-      if (p && (p as HTMLElement).innerText && (p as HTMLElement).innerText.trim()) {
-        description = (p as HTMLElement).innerText.trim();
-      }
-      const a = box.querySelector('a.Card-title');
-      const url = a && (a as HTMLAnchorElement).href ? (a as HTMLAnchorElement).href : '';
-      return {
-        title,
-        description,
-        url,
-        author: 'CNBC',
-        time: new Date().toISOString(),
-        image: '',
-        category: 'market',
-        source: 'cnbc',
-      };
-    }).filter(n => n.title && n.url);
-  });
-  await browser.close();
-  return news;
+  scrapeCNBC2()
+  // const browser = await chromium.launch();
+  // const page = await browser.newPage();
+  // console.log('=======1');
+  // await page.goto('https://www.cnbc.com/world/?region=world', { waitUntil: 'domcontentloaded' });
+  // console.log('=======');
+  
+  // await page.waitForTimeout(5000);
+  // const news = await page.$$eval('div.Card-titleContainer', items => {
+  //   // This part runs in browser context
+  //   return Array.from(items).map(box => {
+  //     let title = '';
+  //     for (let i = 1; i <= 6; i++) {
+  //       const h = box.querySelector('h' + i);
+  //       if (h && (h as HTMLElement).innerText && (h as HTMLElement).innerText.trim()) {
+  //         title = (h as HTMLElement).innerText.trim();
+  //         break;
+  //       }
+  //     }
+  //     let description = '';
+  //     const p = box.querySelector('p');
+  //     if (p && (p as HTMLElement).innerText && (p as HTMLElement).innerText.trim()) {
+  //       description = (p as HTMLElement).innerText.trim();
+  //     }
+  //     const a = box.querySelector('a.Card-title');
+  //     const url = a && (a as HTMLAnchorElement).href ? (a as HTMLAnchorElement).href : '';
+  //     const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //     if (!category) return null; // skip if not stock market related
+  //     const zone = getZone(title + ' ' + description);
+  //     return {
+  //       title,
+  //       description,
+  //       url,
+  //       author: 'CNBC',
+  //       time: new Date().toISOString(),
+  //       image: '',
+  //       category,
+  //       zone,
+  //       source: 'cnbc',
+  //     };
+  //   }).filter(Boolean);
+  // });
+  // await browser.close();
+  // return news;
 }
 
 // Moneycontrol
@@ -240,13 +431,17 @@ export async function scrapeMoneycontrol() {
         const href = a.attr('href') || '';
         link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         author: 'Moneycontrol',
         time: new Date().toISOString(),
         image: '',
-        category: 'business',
+        category,
+        zone,
         source: 'moneycontrol',
         url: link,
       });
@@ -260,7 +455,7 @@ export async function scrapeRssFeeds() {
   const parser = new Parser();
   const rssFeeds = [
     // Finance / Business
-    'https://www.moneycontrol.com/rss/MCtopnews.xml',
+   
     'https://economictimes.indiatimes.com/rssfeedsdefault.cms',
     'https://www.financialexpress.com/feed/',
     'https://www.livemint.com/rss',
@@ -276,8 +471,7 @@ export async function scrapeRssFeeds() {
     // Global News
     'https://feeds.bbci.co.uk/news/world/rss.xml',
     'https://www.reuters.com/tools/rss',
-    'https://edition.cnn.com/services/rss/',
-    'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'
+ 
   ];
   const allFeeds: any[] = [];
   const placeholders = [
@@ -335,11 +529,15 @@ export async function scrapeLivemintNews() {
         const href = a.attr('href') || '';
         link = href.startsWith('http') ? href : 'https://www.livemint.com' + href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: '',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -369,11 +567,15 @@ export async function scrapeEconomicTimesNews() {
         const href = a.attr('href') || '';
         link = href.startsWith('http') ? href : 'https://economictimes.indiatimes.com' + href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: '',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -403,11 +605,15 @@ export async function scrapeNews18News() {
         const href = a.attr('href') || '';
         link = href.startsWith('http') ? href : 'https://www.news18.com' + href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: '',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -437,11 +643,15 @@ export async function scrapeMoneycontrolEconomy() {
         const href = a.attr('href') || '';
         link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: '',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -469,11 +679,15 @@ export async function scrapeIndiaTodayWorldNews() {
       if (titleTag.length) {
         link = 'https://www.indiatoday.in' + titleTag.attr('href');
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: 'world',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -502,11 +716,15 @@ export async function scrapeLivemintWorldNews() {
         const href = linkTag.attr('href') || '';
         link = href.startsWith('/') ? 'https://www.livemint.com' + href : href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: 'world',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -535,11 +753,15 @@ export async function scrapeMoneycontrolWorldNews() {
         const href = a.attr('href') || '';
         link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: 'world',
+        category,
+        zone,
         source: '',
         date: today
       });
@@ -568,11 +790,15 @@ export async function scrapeEconomicTimesWorldNews() {
         const href = a.attr('href') || '';
         link = href.startsWith('/') ? 'https://economictimes.indiatimes.com' + href : href;
       }
+      const category = getFinanceCategory(title) || getFinanceCategory(description);
+      if (!category) return; // skip if not stock market related
+      const zone = getZone(title + ' ' + description);
       news.push({
         title,
         description,
         url: link,
-        category: 'world',
+        category,
+        zone,
         source: '',
         date: today
       });

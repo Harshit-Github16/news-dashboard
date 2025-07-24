@@ -47,15 +47,17 @@ export async function POST(req: NextRequest) {
   for (const news of scraped) {
     const slug = (news.headline || news.title || '').slice(0, 25).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
     const url = news.url;
-    if (!url || !(news.title || news.headline) || !news.description) continue;
+    const titleText = news.title || news.headline || '';
+    const descText = news.description || '';
+    if (!url || titleText.trim().length < 50 || descText.trim().length < 100) continue;
     let toSave = null;
     try {
       const rewrittenArr = await rewriteNews([{ ...news, slug }]);
-      if (Array.isArray(rewrittenArr) && rewrittenArr.length > 0 && rewrittenArr[0]?.url && rewrittenArr[0]?.title && rewrittenArr[0]?.description) {
+      if (Array.isArray(rewrittenArr) && rewrittenArr.length > 0 && rewrittenArr[0]?.url && rewrittenArr[0]?.title && rewrittenArr[0]?.description && rewrittenArr[0].title.trim().length >= 50 && rewrittenArr[0].description.trim().length >= 100) {
         toSave = rewrittenArr[0];
       }
     } catch (err) {
-      // Ignore error, fallback to original
+      // Ignore Gemini error, fallback to original
     }
     if (!toSave) {
       toSave = { ...news, slug };
@@ -67,9 +69,9 @@ export async function POST(req: NextRequest) {
       toSave.sentiment = Math.round(((s + 5) / 10) * 5); // -5=>0, 0=>2.5, 5=>5
     }
     // Only save if both title and description are present and meet length requirements
-    const titleText = toSave.title || toSave.headline || '';
-    const descText = toSave.description || '';
-    if (titleText.length >= 50 && descText.length >= 100) {
+    const finalTitle = toSave.title || toSave.headline || '';
+    const finalDesc = toSave.description || '';
+    if (finalTitle.trim().length >= 50 && finalDesc.trim().length >= 100) {
       const exists = await News.findOne({ url: toSave.url });
       if (!exists) {
         const created = await News.create(toSave);

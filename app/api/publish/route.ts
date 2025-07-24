@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     featured_media = await getMediaIdFromUrl(news.image, WP_USER, WP_APP_PASS);
   }
   const postData: any = {
-    title: news.headline,
+    title: news.title || news.headline,
     content: `<img src='${news.image}' style='max-width:100%;height:auto' /><br/>${news.description}`,
     status: 'publish',
     categories: categoryId ? [categoryId] : [],
