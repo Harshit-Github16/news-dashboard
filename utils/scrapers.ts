@@ -52,8 +52,6 @@ const scrapeTimesOfIndia2 = async () => {
       timeout: 30000, // 30-second timeout
     });
 
-    console.log('Successfully fetched Times of India page');
-
     const $: CheerioAPI = cheerio.load(response.data);
     const today = moment().format('YYYY-MM-DD HH:mm:ss');
 
@@ -90,7 +88,7 @@ const scrapeTimesOfIndia2 = async () => {
       });
     }
 
-    console.log('Scraped news:', news);
+
     return news;
   } catch (error:any) {
     console.error('Cheerio Times of India Error:', {
@@ -125,16 +123,15 @@ const scrapeCNBC2 = async () => {
       timeout: 30000,
     });
 
-    console.log('Successfully fetched Times of India page');
+
 
     const $: CheerioAPI = cheerio.load(response.data);
     const today = moment().format('YYYY-MM-DD HH:mm:ss');
 
     const news: any[] = [];
     // Updated selector based on Times of India structure (adjust if needed)
-    const wrapper = $('.PageBuilder-containerFluidWidths .PageBuilder-col .HomePageInternational-riverPlus .RiverPlusCard-container .RiverPlusCard-cardLeft .RiverHeadline-headline'); // Adjust selector to match actual DOM structure
-   
-   console.log("wrapperwrapperwrapperwrapper",wrapper.length);
+    const wrapper = $('.PageBuilder-containerFluidWidths .PageBuilder-col .HomePage '); // Adjust selector to match actual DOM structure
+
    
     for (const element of wrapper.toArray()) {
       const $el = $(element);
@@ -166,7 +163,7 @@ const scrapeCNBC2 = async () => {
       });
     }
 
-    console.log('Scraped news:', news);
+
     return news;
   } catch (error:any) {
     console.error('Cheerio Times of India Error:', {
@@ -413,41 +410,116 @@ export async function scrapeCNBC() {
 
 // Moneycontrol
 export async function scrapeMoneycontrol() {
-  const url = 'https://www.moneycontrol.com/news/business/';
-  const { data } = await axios.get(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-    }
-  });
-  const $ = cheerio.load(data);
-  const news: any[] = [];
-  $('ul#category li').each((i, el) => {
-    const $el = $(el);
-    const { title, description } = extractTitleAndDescription($el);
-    if (title && description) {
+  // const url = 'https://www.moneycontrol.com/news/business/';
+  // const { data } = await axios.get(url, {
+  //   headers: {
+  //     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+  //   }
+  // });
+  // const $ = cheerio.load(data);
+  // const news: any[] = [];
+  // $('ul#category li').each((i, el) => {
+  //   const $el = $(el);
+  //   const { title, description } = extractTitleAndDescription($el);
+  //   if (title && description) {
+  //     const a = $el.find('a').first();
+  //     let link = '';
+  //     if (a.length) {
+  //       const href = a.attr('href') || '';
+  //       link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
+  //     }
+  //     const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //     if (!category) return; // skip if not stock market related
+  //     const zone = getZone(title + ' ' + description);
+  //     news.push({
+  //       title,
+  //       description,
+  //       author: 'Moneycontrol',
+  //       time: new Date().toISOString(),
+  //       image: '',
+  //       category,
+  //       zone,
+  //       source: 'moneycontrol',
+  //       url: link,
+  //     });
+  //   }
+  // });
+  // return news;
+
+
+  try {
+    // Configure HTTPS agent with modern TLS settings
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    // Make HTTP request with updated headers and agent
+    const response = await axios.get('https://www.moneycontrol.com/news/business/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000, // 30-second timeout
+    });
+
+ 
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.mid-contener #left #cagetory .clearfix'); // Adjust selector to match actual DOM structure
+
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h2').first().text().trim() || $el.find('h1').first().text().trim();
+      const description = $el.find('p').first().text().trim();
       const a = $el.find('a').first();
-      let link = '';
-      if (a.length) {
-        const href = a.attr('href') || '';
-        link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
-      }
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `moneycontrol.com/news/business/ipo${href}`
+        : '';
+
+      // Apply finance category and zone filters
       const category = getFinanceCategory(title) || getFinanceCategory(description);
-      if (!category) return; // skip if not stock market related
+      if (!category) continue; // Skip non-finance-related news
       const zone = getZone(title + ' ' + description);
+
       news.push({
         title,
         description,
-        author: 'Moneycontrol',
-        time: new Date().toISOString(),
+        url,
+        time: today,
         image: '',
+        author: 'Money control',
         category,
         zone,
-        source: 'moneycontrol',
-        url: link,
+        source: 'moneyControl',   
       });
     }
-  });
-  return news;
+
+
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
+
+
+
 }
 
 // RSS Feeds
@@ -624,77 +696,225 @@ export async function scrapeNews18News() {
 
 // Moneycontrol Economy News Scraper
 export async function scrapeMoneycontrolEconomy() {
-  const url = 'https://www.moneycontrol.com/news/business/economy/';
-  const { data } = await axios.get(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-    }
-  });
-  const $ = cheerio.load(data);
-  const today = getTodayDate();
-  const news: any[] = [];
-  $('li').each((i, el) => {
-    const $el = $(el);
-    const { title, description } = extractTitleAndDescription($el);
-    if (title && description) {
+  // const url = 'https://www.moneycontrol.com/news/business/economy/';
+  // const { data } = await axios.get(url, {
+  //   headers: {
+  //     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+  //   }
+  // });
+  // const $ = cheerio.load(data);
+  // const today = getTodayDate();
+  // const news: any[] = [];
+  // $('li').each((i, el) => {
+  //   const $el = $(el);
+  //   const { title, description } = extractTitleAndDescription($el);
+  //   if (title && description) {
+  //     const a = $el.find('a').first();
+  //     let link = '';
+  //     if (a.length) {
+  //       const href = a.attr('href') || '';
+  //       link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
+  //     }
+  //     const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //     if (!category) return; // skip if not stock market related
+  //     const zone = getZone(title + ' ' + description);
+  //     news.push({
+  //       title,
+  //       description,
+  //       url: link,
+  //       category,
+  //       zone,
+  //       source: '',
+  //       date: today
+  //     });
+  //   }
+  // });
+  // return news;
+
+  try {
+    // Configure HTTPS agent with modern TLS settings
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    // Make HTTP request with updated headers and agent
+    const response = await axios.get('https://www.moneycontrol.com/news/business/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000, // 30-second timeout
+    });
+
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.mid-contener #left #cagetory .clearfix'); // Adjust selector to match actual DOM structure
+
+ 
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h2').first().text().trim() || $el.find('h1').first().text().trim();
+      const description = $el.find('p').first().text().trim();
       const a = $el.find('a').first();
-      let link = '';
-      if (a.length) {
-        const href = a.attr('href') || '';
-        link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
-      }
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `moneycontrol.com/news/business/ipo${href}`
+        : '';
+
+      // Apply finance category and zone filters
       const category = getFinanceCategory(title) || getFinanceCategory(description);
-      if (!category) return; // skip if not stock market related
+      if (!category) continue; // Skip non-finance-related news
       const zone = getZone(title + ' ' + description);
+
       news.push({
         title,
         description,
-        url: link,
+        url,
+        time: today,
+        image: '',
+        author: 'Money control Economics',
         category,
         zone,
-        source: '',
-        date: today
+        source: 'moneyControlEconomics',   
       });
     }
-  });
-  return news;
+
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
 }
 
 // India Today World/Business News Scraper
 export async function scrapeIndiaTodayWorldNews() {
-  const url = 'https://www.indiatoday.in/business';
-  const { data } = await axios.get(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0' }
-  });
-  const $ = cheerio.load(data);
-  const today = getTodayDate();
-  const news: any[] = [];
-  const articles = $(".story__grid article").slice(0, 10);
-  articles.each((i, article) => {
-    const $el = $(article);
-    const { title, description } = extractTitleAndDescription($el);
-    if (title && description) {
-      const titleTag = $el.find('h2 a');
-      let link = '';
-      if (titleTag.length) {
-        link = 'https://www.indiatoday.in' + titleTag.attr('href');
-      }
+  // const url = 'https://www.indiatoday.in/business';
+  // const { data } = await axios.get(url, {
+  //   headers: { 'User-Agent': 'Mozilla/5.0' }
+  // });
+  // const $ = cheerio.load(data);
+  // const today = getTodayDate();
+  // const news: any[] = [];
+  // const articles = $(".story__grid article").slice(0, 10);
+  // articles.each((i, article) => {
+  //   const $el = $(article);
+  //   const { title, description } = extractTitleAndDescription($el);
+  //   if (title && description) {
+  //     const titleTag = $el.find('h2 a');
+  //     let link = '';
+  //     if (titleTag.length) {
+  //       link = 'https://www.indiatoday.in' + titleTag.attr('href');
+  //     }
+  //     const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //     if (!category) return; // skip if not stock market related
+  //     const zone = getZone(title + ' ' + description);
+  //     news.push({
+  //       title,
+  //       description,
+  //       url: link,
+  //       category,
+  //       zone,
+  //       source: '',
+  //       date: today
+  //     });
+  //   }
+  // });
+  // return news;
+
+  try {
+    // Configure HTTPS agent with modern TLS settings
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    // Make HTTP request with updated headers and agent
+    const response = await axios.get('https://www.indiatoday.in/business', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000, // 30-second timeout
+    });
+
+
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.main__content .lhs__section .B1S3_B1__s3__widget__lSl3T .story__grid .B1S3_story__card__A_fhi '); // Adjust selector to match actual DOM structure
+
+
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h2').first().text().trim() || $el.find('h1').first().text().trim();
+      const description = $el.find('p').first().text().trim();
+      const a = $el.find('a').first();
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `https://www.indiatoday.in/business${href}`
+        : '';
+
+      // Apply finance category and zone filters
       const category = getFinanceCategory(title) || getFinanceCategory(description);
-      if (!category) return; // skip if not stock market related
+      if (!category) continue; // Skip non-finance-related news
       const zone = getZone(title + ' ' + description);
+
       news.push({
         title,
         description,
-        url: link,
+        url,
+        time: today,
+        image: '',
+        author: 'India Today News',
         category,
         zone,
-        source: '',
-        date: today
+        source: 'indiaTodayNews',   
       });
     }
-  });
-  return news;
+
+
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
+
+
+
 }
+
+
+
 
 // LiveMint World News Scraper
 export async function scrapeLivemintWorldNews() {
@@ -735,74 +955,227 @@ export async function scrapeLivemintWorldNews() {
 
 // Moneycontrol World News Scraper
 export async function scrapeMoneycontrolWorldNews() {
-  const url = 'https://www.moneycontrol.com/world/news/';
-  const { data } = await axios.get(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0' }
-  });
-  const $ = cheerio.load(data);
-  const today = getTodayDate();
-  const news: any[] = [];
-  const articles = $('ul#cagetory li').slice(0, 10);
-  articles.each((i, article) => {
-    const $el = $(article);
-    const { title, description } = extractTitleAndDescription($el);
-    if (title && description) {
+  // const url = 'https://www.moneycontrol.com/world/news/';
+  // const { data } = await axios.get(url, {
+  //   headers: { 'User-Agent': 'Mozilla/5.0' }
+  // });
+  // const $ = cheerio.load(data);
+  // const today = getTodayDate();
+  // const news: any[] = [];
+  // const articles = $('ul#cagetory li').slice(0, 10);
+  // articles.each((i, article) => {
+  //   const $el = $(article);
+  //   const { title, description } = extractTitleAndDescription($el);
+  //   if (title && description) {
+  //     const a = $el.find('a').first();
+  //     let link = '';
+  //     if (a.length) {
+  //       const href = a.attr('href') || '';
+  //       link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
+  //     }
+  //     const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //     if (!category) return; // skip if not stock market related
+  //     const zone = getZone(title + ' ' + description);
+  //     news.push({
+  //       title,
+  //       description,
+  //       url: link,
+  //       category,
+  //       zone,
+  //       source: '',
+  //       date: today
+  //     });
+  //   }
+  // });
+  // return news;
+
+
+
+
+  try {
+    // Configure HTTPS agent with modern TLS settings
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    // Make HTTP request with updated headers and agent
+    const response = await axios.get('https://www.moneycontrol.com/news/business/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000, // 30-second timeout
+    });
+
+ 
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.mid-contener #left #cagetory .clearfix'); // Adjust selector to match actual DOM structure
+
+
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h2').first().text().trim() || $el.find('h1').first().text().trim();
+      const description = $el.find('p').first().text().trim();
       const a = $el.find('a').first();
-      let link = '';
-      if (a.length) {
-        const href = a.attr('href') || '';
-        link = href.startsWith('http') ? href : 'https://www.moneycontrol.com' + href;
-      }
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `moneycontrol.com/news/business/ipo${href}`
+        : '';
+
+      // Apply finance category and zone filters
       const category = getFinanceCategory(title) || getFinanceCategory(description);
-      if (!category) return; // skip if not stock market related
+      if (!category) continue; // Skip non-finance-related news
       const zone = getZone(title + ' ' + description);
+
       news.push({
         title,
         description,
-        url: link,
+        url,
+        time: today,
+        image: '',
+        author: 'Money control World',
         category,
         zone,
-        source: '',
-        date: today
+        source: 'moneyControlworld',   
       });
     }
-  });
-  return news;
+
+
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
+
+
+
+
+
+
+
 }
 
 // Economic Times International News Scraper
 export async function scrapeEconomicTimesWorldNews() {
-  const url = 'https://economictimes.indiatimes.com/news/international';
-  const { data } = await axios.get(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0' }
-  });
-  const $ = cheerio.load(data);
-  const today = getTodayDate();
-  const news: any[] = [];
-  const articles = $('.top-news ul.list1 li').slice(0, 10);
-  articles.each((i, article) => {
-    const $el = $(article);
-    const { title, description } = extractTitleAndDescription($el);
-    if (title && description) {
+  // const url = 'https://economictimes.indiatimes.com/news/india';
+  // const { data } = await axios.get(url, {
+  //   headers: { 'User-Agent': 'Mozilla/5.0' }
+  // });
+  // const $ = cheerio.load(data);
+  // const today = getTodayDate();
+  // const news: any[] = [];
+  // const articles = $('.top-news ul.list1 li').slice(0, 10);
+  // articles.each((i, article) => {
+  //   const $el = $(article);
+  //   const { title, description } = extractTitleAndDescription($el);
+  //   if (title && description) {
+  //     const a = $el.find('a').first();
+  //     let link = '';
+  //     if (a.length) {
+  //       const href = a.attr('href') || '';
+  //       link = href.startsWith('/') ? 'https://economictimes.indiatimes.com' + href : href;
+  //     }
+  //     const category = getFinanceCategory(title) || getFinanceCategory(description);
+  //     if (!category) return; // skip if not stock market related
+  //     const zone = getZone(title + ' ' + description);
+  //     news.push({
+  //       title,
+  //       description,
+  //       url: link,
+  //       category,
+  //       zone,
+  //       source: '',
+  //       date: today
+  //     });
+  //   }
+  // });
+  // return news;
+
+  try {
+    // Configure HTTPS agent with modern TLS settings
+    const agent = new https.Agent({
+      rejectUnauthorized: false, // Temporary workaround for SSL issues (not recommended for production)
+      secureOptions: require('crypto').constants.SSL_OP_NO_SSLv2 |
+                     require('crypto').constants.SSL_OP_NO_SSLv3 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1 |
+                     require('crypto').constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
+    });
+
+    // Make HTTP request with updated headers and agent
+    const response = await axios.get('https://economictimes.indiatimes.com/news/india', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      httpsAgent: agent,
+      timeout: 30000, // 30-second timeout
+    });
+
+
+
+    const $: CheerioAPI = cheerio.load(response.data);
+    const today = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    const news: any[] = [];
+    // Updated selector based on Times of India structure (adjust if needed)
+    const wrapper = $('.main_container .section_list .tabdata .eachStory'); // Adjust selector to match actual DOM structure
+
+    for (const element of wrapper.toArray()) {
+      const $el = $(element);
+      const title = $el.find('h3').first().text().trim() || $el.find('a').first().text().trim();
+      const description = $el.find('p').first().text().trim();
       const a = $el.find('a').first();
-      let link = '';
-      if (a.length) {
-        const href = a.attr('href') || '';
-        link = href.startsWith('/') ? 'https://economictimes.indiatimes.com' + href : href;
-      }
+      const href = a.attr('href');
+      const url = href
+        ? href.startsWith('http')
+          ? href
+          : `https://economictimes.indiatimes.com/news/india${href}`
+        : '';
+
+      // Apply finance category and zone filters
       const category = getFinanceCategory(title) || getFinanceCategory(description);
-      if (!category) return; // skip if not stock market related
+      if (!category) continue; // Skip non-finance-related news
       const zone = getZone(title + ' ' + description);
+
       news.push({
         title,
         description,
-        url: link,
+        url,
+        time: today,
+        image: '',
+        author: 'The Economics Times',
         category,
         zone,
-        source: '',
-        date: today
+        source: 'theeconomicsTimes',   
       });
     }
-  });
-  return news;
+
+    return news;
+  } catch (error:any) {
+    console.error('Cheerio Times of India Error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    });
+    throw new Error(`Failed to scrape Times of India: ${error.message}`);
+  }
+
 }

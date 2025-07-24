@@ -21,7 +21,7 @@ const scrapers: any = {
   timesofindia: scrapeTimesOfIndia,
   moneycontrol: scrapeMoneycontrol,
   cnbc: scrapeCNBC,
-  rssfeed: scrapeRssFeeds,
+  // rssfeed: scrapeRssFeeds,
   livemintnews: scrapeLivemintNews,
   economictimesnews: scrapeEconomicTimesNews,
   news18news: scrapeNews18News,
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid source' }, { status: 400 });
   }
   await dbConnect();
-  const scraped = (await scraper()).slice(0, 5); // Limit to 5 news items
+  const scraped = (await scraper()); // Limit to 5 news items
   const saved = [];
   for (const news of scraped) {
     const slug = (news.headline || news.title || '').slice(0, 25).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
