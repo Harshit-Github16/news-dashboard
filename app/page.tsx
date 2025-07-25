@@ -586,7 +586,7 @@ export default function HomePage() {
               <th className="p-3 font-bold border-b border-gray-300 text-left">#</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Headline</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Author</th>
-              <th className="p-3 font-bold border-b border-gray-300 text-left">Time</th>
+              <th className="p-3 font-bold border-b border-gray-300 text-left">Source</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Description</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Category</th>
               <th className="p-3 font-bold border-b border-gray-300 text-left">Zone</th>
@@ -613,7 +613,7 @@ export default function HomePage() {
                   <td className="p-3 border-b border-gray-300 align-middle">{currentPage * itemsPerPage - itemsPerPage + idx + 1}</td>
                   <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={item.title}>{item.title}</td>
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.author || 'N/A'}</td>
-                  <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle">{item.createddate}</td>
+                  <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle uppercase">{item.source}</td>
                   <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={(item.description || '').replace(/<[^>]+>/g, '')}>{(item.description || '').replace(/<[^>]+>/g, '')}</td>
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{categories.find((cat) => cat.id == item.category)?.name || item.category}</td>
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.zone || '-'}</td>
