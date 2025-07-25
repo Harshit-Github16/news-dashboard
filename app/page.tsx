@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSignOutAlt, faEdit, faTrash, faUpload, faCheck, faTimes, faLink, faClock } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
+import Loader from '@/components/Loader';
 // import 'react-quill/dist/quill.snow.css';
 
 async function getNews() {
@@ -528,9 +529,7 @@ export default function HomePage() {
 
     <main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
       {isScraping && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-          <div style={{ color: 'white', fontSize: '2rem' }}>data scrapping</div>
-        </div>
+       <Loader/>
       )}
   {/* Navbar/Header */}
   <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>

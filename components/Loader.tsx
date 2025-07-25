@@ -1,15 +1,19 @@
+'use client';
+
 const Loader = () => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent ">
-      <div className="flex flex-col items-center space-y-4">
-        {/* Custom Logo */}
-        <div className="w-14 h-14 animate-spin rounded-full border-t-4 border-blue-600 border-solid"></div>
-
-        {/* Loading Text */}
-        <p className="text-lg text-gray-600 dark:text-gray-300 font-medium tracking-wide animate-pulse">
-          Loading, please wait...
-        </p>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm bg-white/30 dark:bg-black/30">
+      {/* Gradient Spinner */}
+      <div className="relative w-16 h-16">
+        <div className="absolute inset-0 rounded-full border-4 border-t-transparent border-blue-500 animate-spin" />
+        <div className="absolute inset-0 rounded-full border-4 border-r-transparent border-sky-400 animate-spin [animation-delay:0.15s]" />
+        <div className="absolute inset-0 rounded-full border-4 border-b-transparent border-sky-300 animate-spin [animation-delay:0.3s]" />
       </div>
+
+      {/* Loading Text */}
+      <p className="mt-6 text-blue-600 dark:text-blue-600 text-lg font-semibold tracking-wide">
+        Loading the latest news, please wait...
+      </p>
     </div>
   );
 };
