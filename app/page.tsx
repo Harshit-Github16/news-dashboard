@@ -528,9 +528,9 @@ export default function HomePage() {
  
 
     <main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
-      {isScraping && (
+      {/* {isScraping && (
        <Loader/>
-      )}
+      )} */}
   {/* Navbar/Header */}
   <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>
     <div className="flex items-center gap-1">
@@ -599,11 +599,20 @@ export default function HomePage() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={10} className="text-center py-8 text-gray-400 border-b border-gray-300">Loading...</td>
-              </tr>
-            ) : news.length === 0 ? (
+            {loading || isScraping? 
+            
+            (
+              Array.from({ length: 10 }).map((_, rowIndex) => (
+                <tr key={rowIndex} className="animate-pulse">
+                  {Array.from({ length: 13 }).map((_, colIndex) => (
+                    <td key={colIndex} className="p-3 border-b border-gray-300">
+                      <div className="h-9 bg-gray-200 rounded w-full"></div>
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) 
+            : news.length === 0 ? (
               <tr>
                 <td colSpan={10} className="text-center py-8 text-gray-400 border-b border-gray-300">No news found.</td>
               </tr>
