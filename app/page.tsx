@@ -1,13 +1,13 @@
 'use client'
 import React from 'react';
 import dynamic from 'next/dynamic';
+
 const JoditEditor = dynamic(() => import('jodit-pro-react'), { ssr: false });
 
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSignOutAlt, faEdit, faTrash, faUpload, faCheck, faTimes, faLink, faClock } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
-import Loader from '@/components/Loader';
 // import 'react-quill/dist/quill.snow.css';
 
 async function getNews() {
@@ -36,20 +36,23 @@ function TextEditor({ setContent, content, readonly }: any) {
       height: 300,
     },
     height: 400,
+    paste: {
+      cleanOnPaste: true,
+      allowFilter: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'b', 'i', 'u'],
+    },
   };
   return (
     <JoditEditor
       ref={editor}
-      value={content}
+      value={content || ''}
       config={config}
       tabIndex={1}
       onBlur={newContent => setContent(newContent)}
-      onChange={() => { }}
     />
   );
 }
 
-function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, onDescriptionChange, WP_USERS, errors = {}, isAdd = false, imageUploading }: any) {
+function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categories, WP_USERS, errors = {}, isAdd = false, imageUploading }: any) {
   const [seoScore, setSeoScore] = React.useState<number | null>(null);
   const [seoSuggestions, setSeoSuggestions] = React.useState<string[]>([]);
   const [seoLoading, setSeoLoading] = React.useState(false);
@@ -89,7 +92,7 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
           {/* Left side: all fields except description */}
           <div className="flex flex-col gap-4">
             <label className="block font-semibold text-base">Headline
-              <input name="headline" value={data.title} onChange={onChange} className="w-full p-2 border border-gray-300 text-base mt-1 font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
+              <input name="title" value={data.title || ''} onChange={onChange} className="w-full p-2 border border-gray-300 text-base mt-1 font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none" />
               {isAdd && errors.title && <div className="text-red-500 text-sm mt-1">{errors.title}</div>}
             </label>
             <label className="block font-medium text-sm">Short URL
@@ -126,7 +129,7 @@ function EditModal({ open, data, onChange, onClose, onSave, onImageUpload, categ
           <div className="flex flex-col h-full">
             <div className="font-semibold text-base mb-2">Description</div>
             <div className="min-h-[120px] bg-gray-100 flex-1 border border-gray-200">
-              <TextEditor setContent={onDescriptionChange} content={data.description} readonly={false} />
+              <TextEditor setContent={(content: string) => onChange({ target: { name: 'description', value: content } })} content={data.description} readonly={false} />
               {isAdd && errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
             </div>
           </div>
@@ -287,10 +290,12 @@ export default function HomePage() {
       .replace(/[^a-z0-9\-]/g, '');
   }
 
-  function handleEditChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+
+
+    function handleEditChange(e: any) {
     let value = e.target.value;
     let updated = { ...editData, [e.target.name]: value };
-    if (e.target.name === 'headline') {
+    if (e.target.name === 'title') {
       updated.shortUrl = generateSlug(value);
     }
     setEditData(updated);
@@ -524,7 +529,7 @@ export default function HomePage() {
     <main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
       {isScraping && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-          <Loader />
+          <div style={{ color: 'white', fontSize: '2rem' }}>data scrapping</div>
         </div>
       )}
   {/* Navbar/Header */}
