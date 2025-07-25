@@ -110,7 +110,7 @@ export default function LoginPage() {
           </button>
         </form>
         <div className="w-full mt-6 bg-gray-50 border border-gray-200 rounded p-4 text-xs text-gray-700">
-          <div className="font-semibold mb-1">Dummy Credentials:</div>
+          <div className="font-semibold mb-1">Login Credentials:</div>
           <div><span className="font-medium">username</span> - news-admin</div>
           <div><span className="font-medium">password</span> - 4862</div>
         </div>
