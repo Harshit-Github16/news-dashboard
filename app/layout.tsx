@@ -5,6 +5,7 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap", // optional for better performance
 });
 
 const geistMono = Geist_Mono({
@@ -26,7 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body 
+      
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

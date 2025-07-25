@@ -246,7 +246,7 @@ export default function HomePage() {
       'timesofindia',
       'moneycontrol',
       'cnbc',
-      'rssfeed',
+      // 'rssfeed',
       'livemintnews',
       'economictimesnews',
       'news18news',

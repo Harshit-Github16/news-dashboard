@@ -5,7 +5,7 @@ import {
   scrapeTimesOfIndia,
   scrapeMoneycontrol,
   scrapeCNBC,
-  scrapeRssFeeds,
+  // scrapeRssFeeds,
   scrapeLivemintNews,
   scrapeEconomicTimesNews,
   scrapeNews18News,
