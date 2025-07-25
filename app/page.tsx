@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSignOutAlt, faEdit, faTrash, faUpload, faCheck, faTimes, faLink, faClock } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
+import Loader from '@/components/Loader';
 // import 'react-quill/dist/quill.snow.css';
 
 async function getNews() {
@@ -157,6 +158,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function HomePage() {
+  const [isScraping, setIsScraping] = React.useState(false);
   const [news, setNews] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [scraping, setScraping] = React.useState(false);
@@ -239,7 +241,8 @@ export default function HomePage() {
   });
   const paginatedNews = filteredNews.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  async function handleScrape() {
+    async function handleScrape() {
+    setIsScraping(true);
     setScraping(true);
     // Call all sources one by one (include all from scrapers.ts)
     const sources = [
@@ -266,7 +269,8 @@ export default function HomePage() {
     // Reload news
     const n = await getNews();
     setNews(n);
-    setScraping(false);
+        setScraping(false);
+    setIsScraping(false);
   }
 
   function handleEdit(idx: number) {
@@ -517,7 +521,12 @@ export default function HomePage() {
   return (
  
 
-<main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
+    <main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
+      {isScraping && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <Loader />
+        </div>
+      )}
   {/* Navbar/Header */}
   <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>
     <div className="flex items-center gap-1">
