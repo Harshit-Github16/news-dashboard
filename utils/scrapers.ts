@@ -173,7 +173,7 @@ const scrapeTimesOfIndia2 = async () => {
         url,
         time: today,
         image: "",
-        author: "Times of India",
+        author: "",
         category,
         zone,
         source: "timesofindia",
@@ -249,13 +249,14 @@ const scrapeCNBC2 = async () => {
           : `https://www.cnbc.com${href}`
         : '';
       const time = $el.find('.RiverByline-datePublished').text().trim() || today;
-      const author = $el.find('.RiverByline-authorByline a').text().trim() || 'CNBC';
+      const author = ''
+      const source = $el.find('.RiverByline-authorByline a').text().trim() || 'CNBC';
       const image = $el.find('.RiverThumbnail-imageThumbnail img').attr('src') || '';
       const category = getFinanceCategory(title);
       const zone = getZone(title) || 'Global';
       
       if (title && url && category) {
-        articles.push({ title, url, time, author, image, category, zone });
+        articles.push({ title, url, time, author, image,source, category, zone });
       }
     });
 
@@ -303,7 +304,7 @@ const scrapeCNBC2 = async () => {
           url: article.url,
           time: article.time,
           image: article.image,
-          author: article.author,
+          author: '',
           category: article.category,
           zone: article.zone,
           source: 'cnbc',
@@ -319,7 +320,7 @@ const scrapeCNBC2 = async () => {
           url: article.url,
           time: article.time,
           image: article.image,
-          author: article.author,
+          author: '',
           category: article.category,
           zone: article.zone,
           source: 'cnbc',
@@ -447,7 +448,7 @@ const scrapeLiveMintWorld2 = async () => {
           time: article.time,
           image: article.image,
           isPremium: article.isPremium,
-          author: $article('.storyBy span').text().trim() || 'LiveMint',
+          author: '',
           category: article.category,
           zone: article.zone,
           source: 'live mint world',
@@ -461,7 +462,7 @@ const scrapeLiveMintWorld2 = async () => {
           time: article.time,
           image: article.image,
           isPremium: article.isPremium,
-          author: 'LiveMint',
+          author: '',
           category: article.category,
           zone: article.zone,
           source: 'livemint',
@@ -625,7 +626,7 @@ export async function scrapeMoneycontrol() {
         url,
         time: today,
         image: '',
-        author: 'Money control',
+        author: '',
         category,
         zone,
         source: 'moneyControl',   
@@ -753,7 +754,7 @@ export async function scrapeRssFeeds() {
           return {
             headline,
             description,
-            author: source.trim(),
+            author: '',
             time,
 
             category: cat.charAt(0).toUpperCase() + cat.slice(1),
@@ -984,7 +985,7 @@ export async function scrapeMoneycontrolEconomy() {
         url,
         time: today,
         image: '',
-        author: 'Money control Economics',
+        author: '',
         category,
         zone,
         source: 'moneyControlEconomics',   
@@ -1091,7 +1092,7 @@ export async function scrapeIndiaTodayWorldNews() {
         url,
         time: today,
         image: '',
-        author: 'India Today News',
+        author: '',
         category,
         zone,
         source: 'indiaTodayNews',   
@@ -1215,7 +1216,7 @@ export async function scrapeMoneycontrolWorldNews() {
         url,
         time: today,
         image: '',
-        author: 'Money control World',
+        author: '',
         category,
         zone,
         source: 'moneyControlworld',   
@@ -1330,7 +1331,7 @@ export async function scrapeEconomicTimesWorldNews() {
         url,
         time: today,
         image: '',
-        author: 'The Economics Times',
+        author: '',
         category,
         zone,
         source: 'theeconomicsTimes',   
