@@ -10,7 +10,7 @@ import Image from 'next/image';
 // import 'react-quill/dist/quill.snow.css';
 
 async function getNews() {
-  const res = await fetch('http://localhost:3000/api/news', { cache: 'no-store' });
+  const res = await fetch('/api/news', { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
