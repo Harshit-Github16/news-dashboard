@@ -1,7 +1,7 @@
 'use client'
 import React from 'react';
 import dynamic from 'next/dynamic';
-
+import Head from 'next/head';
 const JoditEditor = dynamic(() => import('jodit-pro-react'), { ssr: false });
 
 import { useRouter } from 'next/navigation';
@@ -197,8 +197,7 @@ export default function HomePage() {
 
   // Login state
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [loginError, setLoginError] = React.useState('');
-  const [loginForm, setLoginForm] = React.useState({ username: '', password: '' });
+
 
   const router = useRouter();
 
@@ -528,6 +527,30 @@ export default function HomePage() {
  
 
     <main className="container-fluid mx-auto p-0 bg-white border border-gray-300 min-h-screen">
+      <Head>
+  <title>NiftyTrader News Dashboard</title>
+  <meta name="description" content="Manage and publish NiftyTrader news with real-time SEO suggestions and WordPress integration." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charSet="utf-8" />
+  <meta name="robots" content="index, follow" />
+
+  {/* Canonical URL */}
+  <link rel="canonical" href="https://yourdomain.com" />
+
+  {/* Open Graph tags for social sharing */}
+  <meta property="og:title" content="NiftyTrader News Dashboard" />
+  <meta property="og:description" content="Manage and publish NiftyTrader news with real-time SEO suggestions." />
+  {/* <meta property="og:image" content="https://yourdomain.com/og-image.jpg" />
+  <meta property="og:url" content="https://yourdomain.com" /> */}
+  <meta property="og:type" content="website" />
+
+  {/* Twitter card */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="NiftyTrader News Dashboard" />
+  <meta name="twitter:description" content="Publish financial news with smart SEO in NiftyTrader." />
+  {/* <meta name="twitter:image" content="https://yourdomain.com/twitter-card.jpg" /> */}
+</Head>
+
       {/* {isScraping && (
        <Loader/>
       )} */}
@@ -535,7 +558,7 @@ export default function HomePage() {
   <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>
     <div className="flex items-center gap-1">
     <Image src="/logo_side.svg" alt="NiftyTrader Logo" width={100} height={100} className='h-12 w-12' priority />
-      <span className="text-2xl font-bold ">NiftyTrader</span>
+      <span className="text-xl font-semibold ">NiftyTrader</span>
     </div>
     <button
       onClick={handleLogout}
@@ -558,13 +581,30 @@ export default function HomePage() {
           <FontAwesomeIcon icon={faPlus} className='h-4 w-4' /> Add News
         </button>
         <button
-          onClick={handleScrape}
-          disabled={scraping}
-          className={`flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded border border-gray-400 font-semibold transition-all duration-150 text-sm ${scraping ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-200'}`}
-          style={{minHeight: '32px'}}
-        >
-          <FontAwesomeIcon icon={faUpload} className='h-4 w-4'  /> {scraping ? 'Scraping...' : 'Fetch Latest News'}
-        </button>
+  onClick={handleScrape}
+  disabled={scraping}
+  className={`
+    flex items-center gap-2
+    px-4 py-1
+    rounded-lg
+    font-medium text-sm
+    transition-all duration-200
+    shadow
+    border
+    ${
+      scraping
+        ? 'bg-blue-100 text-blue-500 border-blue-300 cursor-not-allowed'
+        : 'bg-white text-blue-600 border-blue-500 hover:bg-blue-50 active:bg-blue-100 focus:ring-2 focus:ring-blue-300'
+    }
+  `}
+  style={{ minHeight: '35px' }}
+>
+  <FontAwesomeIcon icon={faUpload} className="w-4 h-4" />
+  {scraping ? 'Scraping...' : 'Fetch Latest News'}
+</button>
+
+
+        
       </div>
       <div className="flex-1 flex justify-end">
         <input
