@@ -586,7 +586,7 @@ export default function HomePage() {
   className={`
     flex items-center gap-2
     px-4 py-1
-    rounded-lg
+    rounded
     font-medium text-sm
     transition-all duration-200
     shadow
