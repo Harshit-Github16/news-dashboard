@@ -3,48 +3,68 @@ import { GoogleGenAI } from '@google/genai';
 const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 export async function rewriteNews(all_news: any[]) {
-  const prompt = `
-INSTRUCTIONS:
-- Only include news that directly impacts the stock market (ignore all other news, even if they are about general economy, politics, or business but do not affect the stock market).
-- For each news, explain in the description how and why this news could affect the stock market (e.g., "This news may cause volatility in Nifty stocks due to...", "This IPO could attract new investors to the market because...").
-- Strictly get news article from each news[sourcelink] and then rewrite each news article while maintaining accuracy.
-- Ensure rewritten content is **exactly 300 characters**.
-- Format into well-structured paragraphs.
-- Strictly preserve numerical data, stock indices, and key facts.
-- Strictly include only unique articles from {today_date}, avoiding duplicates.
-- Strictly identify and remove duplicate articles that convey the same core event or information, even if phrased differently, and keep only one.
-- Analyze the news content and assign a sentiment score from 0 to 5, where 0 is lowest (negative impact), 5 is highest (positive impact), and 2-3 is neutral/average.
-- Analyze the news content and calculate its overall weightage based on its stock market impact (High, Moderate, Low) and sentiment score (0 to 5). Assign a final weightage score that reflects both factors, emphasizing news with high impact and high sentiment scores.
-- For each news, decide the zone as either 'india' or 'world' based on the news content and source. If the news is about India or Indian markets, set zone to 'india'. If it is about global or international markets, set zone to 'world'.
-- For each news, set createddate as the current date and time in DD-MM-YYYY-hhh:mm format.
-- Use only these categories: stocks, nifty, sensex, bse, nse, ipo, market, commodity, futures, options, bond, banknifty, share, sebi, rbi, fii, dii, gst, rupee, dollar, forex, trade, budget, taxation, corporate, msme, nbfc, insurance, psu, business, economy, finance.
-- Do NOT use any other category. If the news does not fit any of these, discard it.
-- Follow this JSON format strictly:
-The output must be an array where each news article follows this structure:
 
+const prompt = `
+You are a financial news rewriter focused on stock market impact.
+
+### OBJECTIVE:
+Extract and rewrite relevant stock market-impacting news from the provided dataset.
+
+### GUIDELINES:
+1. **Include only** news that directly affects the stock market (ignore political, economic, or business news that has no market impact).
+2. **Rewriting rules:**
+   - Fetch and read content from each \`news.sourcelink\`.
+   - Rewrite the headline and news in **simple, accurate English**.
+   - Keep the news description to **exactly 300 characters** (do not exceed).
+   - Provide a **separate short paragraph (20–30 words)** explaining how this news could impact the stock market.
+
+3. **Strictly preserve** all numerical data (like stock prices, indices, dates, financial terms).
+4. **Detect and remove duplicate news** (based on core event similarity), only keep one version.
+5. **Set sentiment score (0–5):**
+   - 0 = very negative, 5 = very positive, 2–3 = neutral.
+6. **Set impact weightage**:
+   - Based on sentiment + market relevance: High, Moderate, Low.
+   - Derive a final score (e.g., High + 5 sentiment = high weightage).
+7. **Zone**:
+   - If news is about India/Indian market, use \`india\`.
+   - If global/international, use \`world\`.
+
+8. **Created date**:
+   - Format: \`DD-MM-YYYY-hh:mm\` (use current IST time).
+
+9. **Allowed categories** (must choose only one):
+   stocks, nifty, sensex, bse, nse, ipo, market, commodity, futures, options, bond, banknifty, share, sebi, rbi, fii, dii, gst, rupee, dollar, forex, trade, budget, taxation, corporate, msme, nbfc, insurance, psu, business, economy, finance
+
+10. **FORMAT** output strictly as an array of JSON objects:
 [
   {
-    "title": "Rewritten Headline",
-    "description": "Rewritten News should be in simple english - easy to understand (strictly in 300 characters only), and must explain how this news could affect the stock market.",
-    "url": "take Source Link as it is from the provided data",
-    "category": "Choose only from the allowed categories above.",
-    "zone": "Decide zone as either 'india' or 'world' based on the news content and source.",
-    "sentiment": "Numerical score from 0 to 5 as described above.",
-    "weightage": "Final weightage score as described above.",
-    "createddate": "Current date and time in DD-MM-YYYY-hhh:mm format."
+    "title": "Rewritten headline here",
+    "description": "Exactly 300 characters rewritten news in simple English.",
+    "impact_summary": "Short 20–30 word explanation on how this affects the stock market.",
+    "url": "original news.sourcelink",
+    "category": "choose from allowed categories only",
+    "zone": "india or world",
+    "sentiment": 0-5,
+    "weightage": "final weightage score (e.g., High, Moderate, Low)",
+    "createddate": "DD-MM-YYYY-hh:mm"
   },
-  {next news in the same format}, ...
+  ...
 ]
 
-EXTRACT ALL NEWS ARTICLES FROM THE FOLLOWING DATA AND STRICTLY FOLLOW THE ABOVE INSTRUCTIONS:
-
+### DATA TO PROCESS:
 ${JSON.stringify(all_news)}
 
-REMEMBER: Strictly from this whole data above identify and remove duplicate articles that convey the same core event or information, even if phrased differently, and keep only one.
+IMPORTANT:
+- Strictly process articles **from today's date only**.
+- **Do NOT include** anything outside the defined structure.
+- Final output must be **valid JSON**.
+
+Begin now.
 `;
+
   try {
     const response = await genAI.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
     });
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
