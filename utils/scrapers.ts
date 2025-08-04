@@ -42,13 +42,13 @@ function getFinanceCategory(text: string) {
   if (lower.includes("sensex")) return "sensex";
   if (lower.includes("ipo")) return "ipo";
   if (lower.includes("dividend")) return "dividend";
-  if (lower.includes("market")) return "market";
-  if (lower.includes("investment")) return "investment";
+
+
   if (lower.includes("mutual fund")) return "mutual fund";
   if (lower.includes("commodity")) return "commodity";
   if (lower.includes("futures")) return "futures";
   if (lower.includes("options")) return "options";
-  if (lower.includes("bond")) return "bond";
+
   if (lower.includes("interest rate")) return "interest rate";
   if (lower.includes("inflation")) return "inflation";
   if (lower.includes("banknifty")) return "banknifty";
@@ -74,19 +74,13 @@ function getFinanceCategory(text: string) {
   if (lower.includes("dii")) return "dii";
   if (lower.includes("gst")) return "gst";
   if (lower.includes("rbi policy")) return "rbi policy";
-  if (lower.includes("monetary policy")) return "monetary policy";
+
   if (lower.includes("rupee")) return "rupee";
   if (lower.includes("dollar")) return "dollar";
   if (lower.includes("forex")) return "forex";
   if (lower.includes("trade")) return "trade";
   if (lower.includes("budget")) return "budget";
-  if (lower.includes("taxation")) return "taxation";
-  if (lower.includes("corporate")) return "corporate";
   if (lower.includes("msme")) return "msme";
-  if (lower.includes("nbfc")) return "nbfc";
-  if (lower.includes("insurance")) return "insurance";
-  if (lower.includes("infrastructure")) return "infrastructure";
-  if (lower.includes("disinvestment")) return "disinvestment";
   if (lower.includes("psu")) return "psu";
   return null;
 }

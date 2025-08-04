@@ -12,6 +12,7 @@ import {
   scrapeMoneycontrolWorldNews,
   scrapeEconomicTimesWorldNews
 } from './utils/scrapers';
+
 import { rewriteNews } from './utils/aiRewriter';
 import dbConnect from './utils/db';
 import News from './models/News';
@@ -36,16 +37,18 @@ async function runAllScrapers() {
   await dbConnect();
   let totalNew = 0;
   let totalUpdated = 0;
+
   for (const scraper of scrapers) {
     try {
       const news = await scraper();
       const rewritten = await rewriteNews(news);
+
       for (const item of rewritten) {
         if (!item.url) continue;
-        // Map title to headline for backward compatibility
+
         const newsData = {
           title: item.title,
-          headline: item.title, // for old code compatibility
+          headline: item.title,
           description: item.description,
           url: item.url,
           category: item.category,
@@ -53,14 +56,15 @@ async function runAllScrapers() {
           sentiment: item.sentiment,
           weightage: item.weightage,
           createddate: item.createddate,
-          // Optionally add image, author, source, etc. if present in item
           image: item.image || '',
           author: item.author || '',
           source: item.source || '',
           published: false,
           time: new Date().toISOString(),
         };
+
         const exists = await News.findOne({ url: item.url });
+
         if (!exists) {
           await News.create(newsData);
           totalNew++;
@@ -69,19 +73,33 @@ async function runAllScrapers() {
           totalUpdated++;
         }
       }
-      console.log(`Scraper ${scraper.name}: ${rewritten.length} rewritten, ${totalNew} new, ${totalUpdated} updated.`);
+
+      console.log(`✅ Scraper ${scraper.name}: ${rewritten.length} rewritten, ${totalNew} new, ${totalUpdated} updated.`);
+
     } catch (e) {
-      console.error('Error in scraper:', scraper.name, e);
+      console.error(`❌ Error in scraper ${scraper.name}:`, e);
     }
   }
-  console.log(`Total new: ${totalNew}, total updated: ${totalUpdated}`);
+
+  console.log(`✅ Total new: ${totalNew}, total updated: ${totalUpdated}`);
 }
 
-// Schedule the cron job to run every 45 minutes
-cron.schedule('*/45 * * * *', async () => {
-  console.log('Cron job started: Scraping news at', new Date().toLocaleString());
-  await runAllScrapers();
-});
+// ✅ Run every 45 minutes
+cron.schedule(
+  '*/45 * * * *',
+  async () => {
+    console.log('🕒 Cron job started: Running all scrapers (every 45 minutes)');
+    try {
+      await runAllScrapers();
+      console.log('✅ All scrapers ran successfully.');
+    } catch (error) {
+      console.error('❌ Error during cron job execution:', error);
+    }
+  },
+  {
+    timezone: 'Asia/Kolkata',
+  }
+);
 
-// Optionally export for manual runs
-export { runAllScrapers }; 
+// Optional manual trigger
+export { runAllScrapers };

@@ -21,26 +21,26 @@ function TextEditor({ setContent, content, readonly }: any) {
   const editor = React.useRef(null);
   const config = {
     readonly: readonly,
-    uploader: {
-      url: 'https://xdsoft.net/jodit/finder/?action=fileUpload'
-    },
-    buttons: [
-      'bold', 'italic', 'underline', 'strikethrough', 'eraser',
-      'ul', 'ol', 'font', 'fontsize', 'paragraph', 'lineHeight',
-      'superscript', 'subscript', 'classSpan', 'cut', 'copy',
-      'paste', 'selectall'
-    ],
-    filebrowser: {
-      ajax: {
-        url: 'https://xdsoft.net/jodit/finder/'
-      },
-      height: 300,
-    },
     height: 400,
+    toolbarSticky: false,
+    showXPathInStatusbar: false,
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: 'insert_clear_html',
+    buttons: [
+      'bold', 'italic', 'underline', 'strikethrough',
+      'ul', 'ol', 'outdent', 'indent',
+      'paragraph', 'font', 'fontsize',
+      'align', 'undo', 'redo', 'hr',
+      'eraser', 'copyformat', 'fullsize', 'preview'
+    ],
+    uploader: {
+      insertImageAsBase64URI: true
+    },
     paste: {
       cleanOnPaste: true,
-      allowFilter: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'b', 'i', 'u'],
-    },
+      allowTags: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'b', 'i', 'u', 'h1', 'h2', 'h3']
+    }
   };
   return (
     <JoditEditor
