@@ -664,7 +664,9 @@ export default function HomePage() {
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.author || 'N/A'}</td>
                   <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle uppercase">{item.source}</td>
                   <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={(item.description || '').replace(/<[^>]+>/g, '')}>{(item.description || '').replace(/<[^>]+>/g, '')}</td>
-                  <td className="p-3 border-b border-gray-300 align-middle capitalize">{categories.find((cat) => cat.id == item.category)?.name || item.category}</td>
+                  <td className="p-3 border-b border-gray-300 align-middle uppercase font-semibold text-[11px] ">
+                    <div className='bg-[#FFEDD5] text-[#634f33] text-center rounded-sm shadow-sm'>{categories.find((cat) => cat.id == item.category)?.name || item.category}</div>
+                  </td>
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.zone || '-'}</td>
                   <td className="p-3 border-b border-gray-300 align-middle">{typeof item.sentiment === 'number' ? `${item.sentiment}/5` : '-'}</td>
                   <td className={`p-3 border-b border-gray-300 align-middle ${item.weightage === 'High' ? 'text-red-600 font-bold' : item.weightage === 'Low' ? 'text-yellow-600 font-bold' : ''}`}>{item.weightage || '-'}</td>
