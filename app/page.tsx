@@ -662,7 +662,7 @@ export default function HomePage() {
                   </td>
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.zone || '-'}</td>
                   <td className="p-3 border-b border-gray-300 align-middle">{typeof item.sentiment === 'number' ? `${item.sentiment}/5` : '-'}</td>
-                  <td className={`p-3 border-b border-gray-300 align-middle ${item.weightage === 'High' ? 'text-red-600 font-bold' : item.weightage === 'Low' ? 'text-yellow-600 font-bold' : ''}`}>{item.weightage || '-'}</td>
+                  <td className={`p-3 border-b border-gray-300 align-middle ${item.weightage === 'High' ? 'text-red-700 font-bold' : item.weightage === 'Low' ? 'text-yellow-700 font-bold' : ''}`}>{item.weightage || '-'}</td>
                   <td className="p-3 border-b border-gray-300 align-middle">
                     <span className="inline-flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition cursor-pointer">
                       <a href={item.url} target="_blank" rel="noopener noreferrer" title="Open Link">
@@ -672,12 +672,12 @@ export default function HomePage() {
                   </td>
                   <td className="p-3 border-b border-gray-300 align-middle">
                     {item.published ? (
-                      <span className="inline-flex items-center gap-2 px-2 py-1 bg-green-100 text-green-700 rounded font-semibold">
-                        <FontAwesomeIcon icon={faCheck} className="text-green-600" /> Published
+                      <span className="inline-flex items-center gap-2 px-2 py-[3px] bg-green-600 text-white  rounded-sm text-[13px]">
+                        <FontAwesomeIcon icon={faCheck} className="text-white" /> Published
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-2 px-2 py-1 bg-orange-100 text-orange-700 rounded font-semibold">
-                        <FontAwesomeIcon icon={faClock} className="text-orange-600" /> Pending
+                      <span className="inline-flex items-center gap-2 px-2 py-[3px] bg-yellow-600 text-white rounded-sm text-[13px]">
+                        <FontAwesomeIcon icon={faClock} className="text-white" /> Pending
                       </span>
                     )}
                   </td>
@@ -773,11 +773,11 @@ export default function HomePage() {
         <div className="fixed inset-0 bg-gray-500 bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-white border border-gray-300 shadow-lg p-8 max-w-sm w-full flex flex-col items-center" style={{borderRadius: 0}}>
             <div className="mb-3">
-              <svg className="w-12 h-12 text-blue-600 mx-auto" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>
+              <svg className="w-12 h-12 text-red-600 mx-auto" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" /></svg>
             </div>
-            <div className="text-lg font-semibold mb-6 text-center text-blue-700">Are you sure you want to delete this news item?</div>
+            <div className="text-lg font-semibold mb-6 text-center text-red-700">Are you sure you want to delete this news?</div>
             <div className="flex justify-center gap-4 w-full">
-              <button onClick={handleDeleteConfirmed} className="px-6 py-1 bg-blue-600 text-white border border-blue-700 font-bold hover:bg-blue-700 transition text-base" style={{borderRadius: 0}}>Yes, Delete</button>
+              <button onClick={handleDeleteConfirmed} className="px-6 py-1 bg-red-600 text-white border border-red-700 font-bold hover:bg-red-700 transition text-base" style={{borderRadius: 0}}>Yes, Delete</button>
               <button onClick={handleDeleteCancel} className="px-6 py-1 bg-gray-100 text-gray-800 border border-gray-400 font-medium hover:bg-gray-200 transition text-base" style={{borderRadius: 0}}>Cancel</button>
             </div>
           </div>
