@@ -549,7 +549,7 @@ export default function HomePage() {
   <meta name="twitter:title" content="NiftyTrader News Dashboard" />
   <meta name="twitter:description" content="Publish financial news with smart SEO in NiftyTrader." />
   {/* <meta name="twitter:image" content="https://yourdomain.com/twitter-card.jpg" /> */}
-</Head>
+      </Head>
 
       {/* {isScraping && (
        <Loader/>
@@ -558,12 +558,12 @@ export default function HomePage() {
   <div className="flex items-center justify-between border-b border-gray-300 px-8 py-3" style={{minHeight: '64px'}}>
     <div className="flex items-center gap-1">
     <Image src="/logo_side.svg" alt="NiftyTrader Logo" width={100} height={100} className='h-12 w-12' priority />
-      <span className="text-xl font-semibold ">NiftyTrader</span>
+      <span className="text-xl font-semibold ">NiftyTrader News </span>
     </div>
     <button
       onClick={handleLogout}
-      className="flex items-center gap-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 font-semibold border border-red-600 transition-all duration-150 text-sm"
-      style={{minHeight: '32px'}}
+      className="flex items-center gap-2 px-4 py-1 bg-red-700 text-white rounded hover:bg-red-800  border border-red-600 transition-all duration-150 text-sm"
+     
     >
       <FontAwesomeIcon icon={faSignOutAlt} className='h-4 w-4'  /> Logout
     </button>
@@ -572,40 +572,33 @@ export default function HomePage() {
   {/* Controls above table */}
   <div className="w-full flex justify-center border-b border-gray-200 bg-gray-50">
     <div className="flex flex-col md:flex-row md:items-center justify-between w-full max-w-full px-8 py-3 gap-3">
-      <div className="flex gap-3 items-center">
-        <button
-          onClick={() => setAddModalOpen(true)}
-          className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded border border-blue-700 hover:bg-blue-700 font-semibold transition-all duration-150 text-sm"
-          style={{minHeight: '32px'}}
-        >
-          <FontAwesomeIcon icon={faPlus} className='h-4 w-4' /> Add News
-        </button>
-        <button
-  onClick={handleScrape}
-  disabled={scraping}
-  className={`
-    flex items-center gap-2
-    px-4 py-1
-    rounded
-    font-medium text-sm
-    transition-all duration-200
-    shadow
-    border
-    ${
+   
+
+<div className="flex items-center gap-3">
+  {/* Add News Button */}
+  <button
+    onClick={() => setAddModalOpen(true)}
+    className="flex items-center gap-2 px-4 py-[7px] bg-blue-600 text-white rounded-md border border-blue-700 hover:bg-blue-700 font-medium transition-all duration-150 text-sm shadow-sm"
+  >
+    <FontAwesomeIcon icon={faPlus} className="w-4 h-4" />
+    Add News
+  </button>
+
+  {/* Fetch Latest News Button */}
+  <button
+    onClick={handleScrape}
+    disabled={scraping}
+    className={`flex items-center gap-2 px-4 py-[7px] rounded-md font-medium text-sm transition-all duration-150 shadow-sm border ${
       scraping
         ? 'bg-blue-100 text-blue-500 border-blue-300 cursor-not-allowed'
-        : 'bg-white text-blue-600 border-blue-500 hover:bg-blue-50 active:bg-blue-100 focus:ring-2 focus:ring-blue-300'
-    }
-  `}
-  style={{ minHeight: '35px' }}
->
-  <FontAwesomeIcon icon={faUpload} className="w-4 h-4" />
-  {scraping ? 'Scraping...' : 'Fetch Latest News'}
-</button>
+        : 'bg-white text-blue-600 border-blue-500 hover:bg-blue-600 hover:text-white focus:ring-2 focus:ring-blue-300 active:bg-blue-100'
+    }`}
+  >
+    <FontAwesomeIcon icon={faUpload} className="w-4 h-4" />
+    {scraping ? 'Scraping...' : 'Fetch Latest News'}
+  </button>
+</div>
 
-
-        
-      </div>
       <div className="flex-1 flex justify-end">
         <input
           type="text"
@@ -665,7 +658,7 @@ export default function HomePage() {
                   <td className="p-3 border-b border-gray-300 text-xs text-gray-500 align-middle uppercase">{item.source}</td>
                   <td className="p-3 border-b border-gray-300 max-w-xs truncate align-middle" title={(item.description || '').replace(/<[^>]+>/g, '')}>{(item.description || '').replace(/<[^>]+>/g, '')}</td>
                   <td className="p-3 border-b border-gray-300 align-middle uppercase font-semibold text-[11px] ">
-                    <div className='bg-[#FFEDD5] text-[#634f33] text-center rounded-sm shadow-sm'>{categories.find((cat) => cat.id == item.category)?.name || item.category}</div>
+                    <div className='bg-[#FFEDD5] text-[#2e261b] font-semibold text-center rounded-sm shadow-sm'>{categories.find((cat) => cat.id == item.category)?.name || item.category}</div>
                   </td>
                   <td className="p-3 border-b border-gray-300 align-middle capitalize">{item.zone || '-'}</td>
                   <td className="p-3 border-b border-gray-300 align-middle">{typeof item.sentiment === 'number' ? `${item.sentiment}/5` : '-'}</td>
