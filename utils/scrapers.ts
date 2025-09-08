@@ -116,51 +116,77 @@ const scrapeTimesOfIndia2 = async () => {
         require("crypto").constants.SSL_OP_NO_TLSv1 |
         require("crypto").constants.SSL_OP_NO_TLSv1_1, // Enforce TLS 1.2 or higher
     });
+   
 
     // Make HTTP request with updated headers and agent
-    const response = await axios.get(
-      "https://timesofindia.indiatimes.com/briefs",
-      {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.5",
-        },
-        httpsAgent: agent,
-        timeout: 30000, // 30-second timeout
-      }
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-extensions',
+        '--window-size=1920,1080',
+        '--start-maximized',
+      ],
+    });
+    const page = await browser.newPage();
+
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     );
+    await page.setExtraHTTPHeaders({
+      'accept-language': 'en-US,en;q=0.9',
+    });
 
-    console.log("Successfully fetched Times of India page");
+    await page.goto( "https://timesofindia.indiatimes.com/flashreads", { waitUntil: 'networkidle2' });
 
-    const $: CheerioAPI = cheerio.load(response.data);
-    const today = moment().format("YYYY-MM-DD HH:mm:ss");
+    const selector = '.fixed-content .relative .swiper-container .swiper-wrapper';
+    const tableExists = await page.evaluate((sel) => {
+      return document.querySelector(sel) !== null;
+    }, selector);
 
-    const news: any[] = [];
-    // Updated selector based on Times of India structure (adjust if needed)
-    const wrapper = $(".brief_box"); // Adjust selector to match actual DOM structure
+    if (!tableExists) {
+      console.error('No articles found with the specified selector');
+    }
+
+    await page.waitForSelector(selector, { timeout: 15000 });
+    const html = await page.content();
+    const $ = cheerio.load(html);
+
+    const wrapper = $('.swiper-slide');
+    console.log(`------Found ${wrapper.length} news items`);
+    // console.log(`------Found ${wrapper} news items`);
+
+    const news = [];
     for (const element of wrapper.toArray()) {
       const $el = $(element);
       const title =
-        $el.find("h2").first().text().trim() ||
+        $el.find("h1").first().text().trim() ||
         $el.find("h1").first().text().trim();
       const description = $el.find("p").first().text().trim();
+      
       const a = $el.find("a").first();
       const href = a.attr("href");
       const url = href
-        ? href.startsWith("http")
-          ? href
-          : `https://timesofindia.indiatimes.com${href}`
-        : "";
-
+      ? href.startsWith("http")
+      ? href
+      : `https://timesofindia.indiatimes.com${href}`
+      : "";
+      
       // Apply finance category and zone filters
       const category =
         getFinanceCategory(title) || getFinanceCategory(description);
       if (!category) continue; // Skip non-finance-related news
       const zone = getZone(title + " " + description);
-
+      const today = moment().format("YYYY-MM-DD HH:mm:ss");
       news.push({
         title,
         description,
@@ -174,7 +200,7 @@ const scrapeTimesOfIndia2 = async () => {
       });
     }
 
-    // console.log("TImes of India scraped news:", news);
+    console.log("TImes of India scraped news:", news);
     return news;
   } catch (error: any) {
     console.error("Cheerio Times of India Error:", {
